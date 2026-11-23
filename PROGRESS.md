@@ -149,7 +149,7 @@
   - Added unit tests for apostrophe normalization and real-time auto-submit in `packages/core/test/gameplay.test.ts` and `packages/core/test/session-engine.test.ts` (49 tests passing).
   - 0 Biome errors across 100 files; full production build clean.
 
-### Phase 8: Auto-Submit on Verse Rewind & Hardware Keyboard Chatter Debounce (Commit pending)
+### Phase 8: Auto-Submit on Verse Rewind & Hardware Keyboard Chatter Debounce (Commit `18e845a`)
 - [x] **Verse Loop Auto-Submit on Rewind:**
   - Added tick-level and rewind-level evaluation for pre-typed answers in `useGameplaySession.ts` and `GameplayContainer.vue`.
   - When the user pre-types the correct word before or during verse rewinds, the answer is auto-submitted automatically without requiring manual Enter keystrokes.
