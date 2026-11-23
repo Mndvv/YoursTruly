@@ -1,4 +1,5 @@
-import type { WordToken } from "../domain/WordToken";
+import type { WordTokenData } from "@yourstruly/contracts";
+import { WordToken } from "../domain/WordToken";
 
 export type DifficultyLevel = "beginner" | "intermediate" | "advanced" | "expert";
 
@@ -11,11 +12,16 @@ const DIFFICULTY_RATIOS: Record<DifficultyLevel, number> = {
 
 export class GapGenerator {
   public generateGaps(
-    words: readonly WordToken[],
+    words: readonly (WordToken | WordTokenData)[],
     difficulty: DifficultyLevel,
     seed = 42,
   ): Set<string> {
-    const eligibleWords = words.filter((w) => w.isEligibleForGap());
+    const tokens = words.map((w) =>
+      typeof (w as WordToken).isEligibleForGap === "function"
+        ? (w as WordToken)
+        : WordToken.fromData(w as WordTokenData),
+    );
+    const eligibleWords = tokens.filter((w) => w.isEligibleForGap());
     if (eligibleWords.length === 0) return new Set();
 
     const targetRatio = DIFFICULTY_RATIOS[difficulty];

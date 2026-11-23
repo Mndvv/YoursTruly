@@ -16,6 +16,7 @@ export * from "./normalization/LyricsNormalizer";
 export * from "./sync/SyncClockEngine";
 export * from "./sync/TapSyncRecorder";
 export * from "./sync/OffsetCalculator";
+export * from "./sync/LyricTimingShifter";
 
 // Gameplay
 export * from "./gameplay/GapGenerator";

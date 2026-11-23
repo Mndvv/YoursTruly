@@ -1,18 +1,28 @@
-import type { WordToken } from "../domain/WordToken";
+import type { WordTokenData } from "@yourstruly/contracts";
+import { WordToken } from "../domain/WordToken";
 
 export class ChoiceDistractorGenerator {
   public generateChoices(
-    targetWord: WordToken,
-    allWords: readonly WordToken[],
+    targetWord: WordToken | WordTokenData,
+    allWords: readonly (WordToken | WordTokenData)[],
     fallbackPool: readonly string[] = ["the", "and", "you", "time", "away", "never", "always"],
   ): string[] {
-    const cleanTarget = targetWord
+    const targetToken =
+      typeof (targetWord as WordToken).getText === "function"
+        ? (targetWord as WordToken)
+        : WordToken.fromData(targetWord as WordTokenData);
+
+    const cleanTarget = targetToken
       .getText()
       .toLowerCase()
       .replace(/[^a-z0-9]/gi, "");
     const candidateSet = new Set<string>();
 
-    for (const w of allWords) {
+    for (const item of allWords) {
+      const w =
+        typeof (item as WordToken).getText === "function"
+          ? (item as WordToken)
+          : WordToken.fromData(item as WordTokenData);
       const clean = w
         .getText()
         .toLowerCase()
@@ -31,7 +41,7 @@ export class ChoiceDistractorGenerator {
     }
 
     const distractors = uniqueCandidates.slice(0, 3);
-    const options = [targetWord.getText(), ...distractors];
+    const options = [targetToken.getText(), ...distractors];
 
     // Deterministic shuffle
     return options.sort((a, b) => a.localeCompare(b));

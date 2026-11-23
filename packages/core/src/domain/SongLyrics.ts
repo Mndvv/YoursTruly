@@ -1,5 +1,5 @@
 import type { LyricsData, SyncLevel } from "@yourstruly/contracts";
-import type { LyricLine } from "./LyricLine";
+import { LyricLine } from "./LyricLine";
 
 export interface SongLyricsConfig {
   version?: number;
@@ -63,5 +63,15 @@ export class SongLyrics {
       hasTransliteration: this.transliteration,
       lines: this.lines.map((l) => l.toData()),
     };
+  }
+
+  public static fromData(data: LyricsData): SongLyrics {
+    return new SongLyrics({
+      version: data.version,
+      source: data.source,
+      syncLevel: data.syncLevel,
+      hasTransliteration: data.hasTransliteration,
+      lines: data.lines.map((l) => LyricLine.fromData(l)),
+    });
   }
 }

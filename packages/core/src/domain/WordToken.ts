@@ -63,4 +63,14 @@ export class WordToken {
       isGapEligible: this.gapEligible,
     };
   }
+
+  public static fromData(data: WordTokenData): WordToken {
+    return new WordToken({
+      id: data.id,
+      text: data.text,
+      startMs: data.startMs,
+      endMs: data.endMs,
+      isGapEligible: data.isGapEligible,
+    });
+  }
 }

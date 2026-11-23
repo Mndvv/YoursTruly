@@ -29,8 +29,7 @@ export function useGameplaySession(song: SongDetailDto) {
   const gapIds = ref<Set<string>>(new Set());
 
   function regenerateGaps() {
-    const tokens = allWords.value as unknown as WordToken[];
-    gapIds.value = gapGenerator.generateGaps(tokens, difficulty.value);
+    gapIds.value = gapGenerator.generateGaps(allWords.value, difficulty.value);
     solvedGapIds.value.clear();
   }
 
@@ -78,18 +77,10 @@ export function useGameplaySession(song: SongDetailDto) {
     const isSolved = solvedGapIds.value.has(word.id);
 
     if (isGap && !isSolved && gameMode.value === "choice" && activeChoices.value.length === 0) {
-      activeChoices.value = distractorGen.generateChoices(
-        word as unknown as WordToken,
-        allWords.value as unknown as WordToken[],
-      );
+      activeChoices.value = distractorGen.generateChoices(word, allWords.value);
     }
 
-    const trigger = autoPauseCtrl.checkAutoPause(
-      word as unknown as WordToken,
-      isGap,
-      isSolved,
-      effectiveMs,
-    );
+    const trigger = autoPauseCtrl.checkAutoPause(word, isGap, isSolved, effectiveMs);
     if (trigger && onAutoPause) {
       onAutoPause();
     }

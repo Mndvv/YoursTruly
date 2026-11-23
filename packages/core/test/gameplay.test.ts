@@ -43,6 +43,16 @@ describe("Gameplay: GapGenerator", () => {
     const gaps = generator.generateGaps(words, "beginner", 123);
     expect(gaps.size).toBe(1);
   });
+
+  it("supports plain WordTokenData JSON objects seamlessly", () => {
+    const rawWords = [
+      { id: "rw1", text: "Hello", startMs: 100, endMs: 200, isGapEligible: true },
+      { id: "rw2", text: "world", startMs: 200, endMs: 300, isGapEligible: true },
+    ];
+    const gaps = generator.generateGaps(rawWords, "expert");
+    expect(gaps.size).toBe(2);
+    expect(gaps.has("rw1")).toBe(true);
+  });
 });
 
 describe("Gameplay: AutoPauseController", () => {

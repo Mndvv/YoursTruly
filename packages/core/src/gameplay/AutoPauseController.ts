@@ -1,4 +1,5 @@
-import type { WordToken } from "../domain/WordToken";
+import type { WordTokenData } from "@yourstruly/contracts";
+import { WordToken } from "../domain/WordToken";
 
 export interface AutoPauseTrigger {
   wordId: string;
@@ -23,7 +24,7 @@ export class AutoPauseController {
   }
 
   public checkAutoPause(
-    activeWord: WordToken | null,
+    activeWord: WordToken | WordTokenData | null,
     isGap: boolean,
     isSolved: boolean,
     currentTimeMs: number,
@@ -32,10 +33,15 @@ export class AutoPauseController {
       return null;
     }
 
-    const endMs = activeWord.getEndMs();
+    const token =
+      typeof (activeWord as WordToken).getId === "function"
+        ? (activeWord as WordToken)
+        : WordToken.fromData(activeWord as WordTokenData);
+
+    const endMs = token.getEndMs();
     if (endMs === null) return null;
 
-    const wordId = activeWord.getId();
+    const wordId = token.getId();
     if (this.pausedWordIds.has(wordId)) {
       return null;
     }
@@ -45,7 +51,7 @@ export class AutoPauseController {
       this.pausedWordIds.add(wordId);
       return {
         wordId,
-        wordText: activeWord.getText(),
+        wordText: token.getText(),
         triggerTimeMs: currentTimeMs,
       };
     }

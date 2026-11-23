@@ -4,12 +4,12 @@ import type {
   LyricsData,
   SongCreatedResponseDto,
 } from "@yourstruly/contracts";
-import { LyricsNormalizer, TapSyncRecorder, YouTubeTitleCleaner } from "@yourstruly/core";
+import { LyricTimingShifter, LyricsNormalizer, TapSyncRecorder } from "@yourstruly/core";
 import { computed, ref } from "vue";
 
 export function useSyncStudio(apiBase = "http://localhost:4000") {
-  const titleCleaner = new YouTubeTitleCleaner();
   const normalizer = new LyricsNormalizer();
+  const shifter = new LyricTimingShifter();
   const currentStep = ref<"youtube" | "lyrics" | "sync" | "done">("youtube");
 
   const youtubeUrl = ref("");
@@ -83,14 +83,13 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
 
   function useCustomLyrics(rawText: string) {
     if (!rawText.trim()) throw new Error("Lyrics text cannot be empty");
-    const payload = {
+    const normalized = normalizer.normalize({
       source: "manual",
       artist: artistName.value || "Unknown Artist",
       title: songTitle.value || videoTitle.value,
       hasTimestamps: /\[\d{2}:\d{2}/.test(rawText),
       lyrics: rawText.trim(),
-    };
-    const normalized = normalizer.normalize(payload);
+    });
     lyricsData.value = normalized.toData();
     currentStep.value = "sync";
   }
@@ -112,6 +111,20 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
   function toggleWordGap(wordId: string) {
     const word = allWords.value.find((w) => w.id === wordId);
     if (word) word.isGapEligible = !word.isGapEligible;
+  }
+
+  const firstLyricStartMs = computed(() => {
+    return lyricsData.value ? shifter.findEarliestStartMs(lyricsData.value) : null;
+  });
+
+  function shiftAllLyrics(deltaMs: number) {
+    if (!lyricsData.value) return;
+    lyricsData.value = shifter.shiftAllByDelta(lyricsData.value, deltaMs);
+  }
+
+  function alignStartToTime(targetMs: number) {
+    if (!lyricsData.value) return;
+    lyricsData.value = shifter.alignStartToTime(lyricsData.value, targetMs);
   }
 
   async function submitSong(): Promise<SongCreatedResponseDto> {
@@ -170,6 +183,9 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
     currentWordIndex,
     createdSong,
     isSubmitting,
+    firstLyricStartMs,
+    shiftAllLyrics,
+    alignStartToTime,
     fetchYouTubeMetadata,
     searchCandidates,
     selectCandidate,

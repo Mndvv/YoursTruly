@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Candidate Search Performance & Multi-Provider Architecture [COMPLETED]
-- **Active Task:** Concurrent multi-provider Lyrica queries, romanize graceful fallback, and manual lyrics paste verified
+- **Current Phase:** Gameplay Gap Generation Fix & Studio Sync UX Enhancements [COMPLETE]
+- **Active Task:** Complete! Verified with 39 passing tests and 0 Biome lint errors across 93 files.
 - **Last Updated:** 2026-11-23
 
 ---
@@ -81,6 +81,12 @@
 - [x] Unified `bun run build` building both API and Web bundles cleanly
 - [x] Fixed Lyrica `timed_lyrics` payload integration in sync strategies
 - [x] Resolved Lyrica Groq romanize requirement causing 500 error on self-hosted instances without Groq keys
+- [x] Fix `w.isEligibleForGap` TypeError by supporting plain `WordTokenData` and factory methods in `WordToken`, `LyricLine`, and `SongLyrics`
+- [x] Support plain JSON objects across `GapGenerator`, `ChoiceDistractorGenerator`, `AutoPauseController`, and `SyncClockEngine`
+- [x] Create `LyricTimingShifter` pure OOP engine for full-track alignment and timestamp shifting while preserving intervals
+- [x] Add Live Lyrics Sync Preview under YouTube player during Studio sync playback
+- [x] Add `TrackAlignmentControl` component with "Align all lyrics to current time" and ±1s / ±5s track shifting
+- [x] Extract `LyricCandidatePicker` presentational component to keep `SyncStudioContainer` < 180 lines
 
 ---
 
@@ -94,14 +100,25 @@
 6. **Multi-Candidate Lyrica Picker:** Users can query by keyword (without artist restrictions) and select among all versions returned by Lyrica's aggregation engine, complete with preview snippets.
 7. **LRC String Parser:** `LineSyncedLyricaStrategy` can parse standard LRC timestamps `[mm:ss.xx]` directly from raw text strings into timestamped line objects.
 8. **Graceful Romanize Fallback:** When a self-hosted Lyrica instance has no `GROQ_API_KEY`, `LyricaGateway` automatically falls back to `romanize: false` so requests never fail or hang.
+9. **Domain Model Factory Methods:** `WordToken.fromData`, `LyricLine.fromData`, `SongLyrics.fromData` bridge serialized JSON DTOs and pure OOP entities without class type mismatches.
+10. **`LyricTimingShifter` Full-Track Alignment:** Allows shifting an entire track to compensate for video MV intros while maintaining exact word/line intervals.
+11. **Studio Live Sync Preview:** Uses `SyncClockEngine` to drive live `<LyricDisplay>` in real time during video playback in the Studio so author can visually verify sync accuracy before publishing.
 
 ---
 
 ## Known Issues / Blockers
 
-- None. All 35 unit & integration tests passing. `bun run dev` and `bun run build` verified.
+- None. All 39 unit & integration tests passing. Biome check passing with 0 errors across 93 files.
 
 ---
+
+## Exact Next Step
+
+1. Launch `bun run dev` (API on port 4000, Web on port 3000).
+2. Open `http://localhost:3000/studio` and test:
+   - Live lyric preview highlighting active words while the YouTube video plays.
+   - Whole-track "Align all lyrics to current time" button to skip MV intros.
+3. Open `http://localhost:3000/game/:id` and verify gameplay launches with write & choice modes without `TypeError`.
 
 ## Exact Next Step
 

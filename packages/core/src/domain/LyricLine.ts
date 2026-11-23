@@ -1,6 +1,6 @@
 import type { LyricLineData } from "@yourstruly/contracts";
 import { TimestampMs } from "./TimestampMs";
-import type { WordToken } from "./WordToken";
+import { WordToken } from "./WordToken";
 
 export interface LyricLineConfig {
   id: string;
@@ -72,5 +72,16 @@ export class LyricLine {
       transliteration: this.transliteration,
       words: this.words.map((w) => w.toData()),
     };
+  }
+
+  public static fromData(data: LyricLineData): LyricLine {
+    return new LyricLine({
+      id: data.id,
+      text: data.text,
+      startMs: data.startMs,
+      endMs: data.endMs,
+      transliteration: data.transliteration,
+      words: data.words.map((w) => WordToken.fromData(w)),
+    });
   }
 }
