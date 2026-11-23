@@ -1,0 +1,51 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - DB_DRIVER=${DB_DRIVER:-sqlite}
+      - DATABASE_URL=${DATABASE_URL:-file:/data/yourstruly.db}
+      - LYRICA_BASE_URL=${LYRICA_BASE_URL:-https://lyrica.collei.my.id}
+      - TURNSTILE_ENABLED=${TURNSTILE_ENABLED:-false}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
+    volumes:
+      - yourstruly_data:/data
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:4000/health').then(r => process.exit(r.ok ? 0 : 1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - NUXT_PUBLIC_API_BASE=${PUBLIC_API_BASE:-http://localhost:4000}
+      - NUXT_API_INTERNAL_URL=http://api:4000
+      - NUXT_PUBLIC_TURNSTILE_SITE_KEY=${TURNSTILE_SITE_KEY:-}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-yourstruly}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-yourstruly_secret}
+      - POSTGRES_DB=${POSTGRES_DB:-yourstruly}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  yourstruly_data:
+  postgres_data:
