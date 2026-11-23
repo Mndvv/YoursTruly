@@ -160,7 +160,7 @@
   - Added configurable user preferences in `PreGameLobby.vue` and `ScoreBar.vue` (`🛡️ Anti-Chatter`).
   - Added comprehensive unit tests in `gameplay.test.ts` and `session-engine.test.ts` (39 core passing tests). All 101 files verified clean by Biome.
 
-### Phase 9: Catalogue Export/Import, In-App YouTube Search & Mobile Virtual Keyboard UX (Commit pending)
+### Phase 9: Catalogue Export/Import, In-App YouTube Search & Mobile Virtual Keyboard UX (Commit `5ca465b`)
 - [x] **Catalogue Export & Import:**
   - Added `exportAll()` and `upsert()` methods in `ISongRepository` and `SqliteSongRepository` (185 lines).
   - Added `exportCatalogue()` and `importCatalogue()` methods in `SongService.ts` with validation using `SongDetailDtoSchema`.
