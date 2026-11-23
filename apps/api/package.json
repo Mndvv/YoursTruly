@@ -1,0 +1,22 @@
+{
+  "name": "@yourstruly/api",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/swagger": "^1.2.0",
+    "@yourstruly/contracts": "workspace:*",
+    "@yourstruly/core": "workspace:*",
+    "@yourstruly/db": "workspace:*",
+    "elysia": "^1.2.22"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

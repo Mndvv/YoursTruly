@@ -1,0 +1,19 @@
+{
+  "name": "yourstruly-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:api": "bun --filter api dev",
+    "dev:web": "bun --filter web dev",
+    "dev": "bun --filter \"*\" dev",
+    "build": "bun --filter \"*\" build",
+    "test": "bun test",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.7.3"
+  }
+}
