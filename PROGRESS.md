@@ -1,9 +1,9 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Fast-Typing UX: Real-Time Keystroke Auto-Submit & Configurable Punctuation/Apostrophe Normalization [COMPLETE]
-- **Active Task:** All features implemented, verified with 49 passing unit tests across 11 test files, 0 Biome errors across 100 files, and clean monorepo builds. Ready for commit.
-- **Last Updated:** 2026-11-23
+- **Current Phase:** Verse-Loop Auto-Submit on Rewind & Keyboard Debounce / Chatter Prevention [COMPLETE]
+- **Active Task:** All unit tests, Biome linting, and build verification completed. Ready for commit.
+- **Last Updated:** 2026-11-24
 
 ---
 
@@ -148,6 +148,17 @@
 - [x] **Verification & Tests:**
   - Added unit tests for apostrophe normalization and real-time auto-submit in `packages/core/test/gameplay.test.ts` and `packages/core/test/session-engine.test.ts` (49 tests passing).
   - 0 Biome errors across 100 files; full production build clean.
+
+### Phase 8: Auto-Submit on Verse Rewind & Hardware Keyboard Chatter Debounce (Commit pending)
+- [x] **Verse Loop Auto-Submit on Rewind:**
+  - Added tick-level and rewind-level evaluation for pre-typed answers in `useGameplaySession.ts` and `GameplayContainer.vue`.
+  - When the user pre-types the correct word before or during verse rewinds, the answer is auto-submitted automatically without requiring manual Enter keystrokes.
+- [x] **Hardware Keyboard Debouncing & Extra Double-Character Filtering:**
+  - Created run-length encoding chatter matcher in `AnswerValidator.ts` (`matchesWithChatter`). Correctly forgives hardware chatter (e.g., `llike`, `likke`, `loook` for `like` and `look`) while strictly rejecting wrong characters or missing double characters.
+  - Implemented real-time hardware chatter prevention in `WriteInput.vue` (<75ms for same key) and target-word double check on `@keydown` to prevent redundant double letters from entering the input field.
+  - Extracted `WordTransitionHelper.ts` to keep `GameplaySessionEngine.ts` strictly within the 200-line hard limit (197 lines) and max 150-line class size.
+  - Added configurable user preferences in `PreGameLobby.vue` and `ScoreBar.vue` (`🛡️ Anti-Chatter`).
+  - Added comprehensive unit tests in `gameplay.test.ts` and `session-engine.test.ts` (39 core passing tests). All 101 files verified clean by Biome.
 
 ---
 

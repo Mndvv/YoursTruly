@@ -12,6 +12,7 @@ export function useGameplaySession(song: SongDetailDto) {
   const difficulty = ref<DifficultyLevel>("intermediate");
   const pauseMode = ref<PauseMode>("verse_loop");
   const ignoreSymbols = ref(true);
+  const debounceDoubleLetters = ref(true);
 
   const engine = new GameplaySessionEngine(song, pauseMode.value);
 
@@ -57,10 +58,14 @@ export function useGameplaySession(song: SongDetailDto) {
   watch(difficulty, () => regenerateGaps());
   watch(pauseMode, (val) => engine.configure({ pauseMode: val }));
   watch(ignoreSymbols, (val) => engine.configure({ ignoreSymbols: val }));
+  watch(debounceDoubleLetters, (val) => engine.configure({ debounceDoubleLetters: val }));
 
   function onPlaybackTick(currentTimeMs: number, actions: PlaybackActions) {
     engine.tick(currentTimeMs, actions);
     syncState();
+    if (currentInput.value.trim().length > 0) {
+      submitAnswer(true);
+    }
   }
 
   function submitAnswer(isAutoCheck = false): boolean {
@@ -99,6 +104,7 @@ export function useGameplaySession(song: SongDetailDto) {
     difficulty,
     pauseMode,
     ignoreSymbols,
+    debounceDoubleLetters,
     score,
     streak,
     successCount,

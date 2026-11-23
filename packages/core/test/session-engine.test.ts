@@ -56,6 +56,12 @@ describe("Gameplay: GameplaySessionEngine", () => {
 
     // Target immediately advances to "look"
     expect(engine.activeWord?.text).toBe("look");
+
+    // Chatter typing: user accidentally types "loook"
+    const chatterCheck = engine.submitAnswer("loook", true);
+    expect(chatterCheck).toBe(true);
+    expect(engine.solvedGapIds.has("w2")).toBe(true);
+    expect(engine.activeWord?.text).toBe("away");
   });
 
   it("handles verse loop rewinds and auto-skips verse when max retries exceeded", () => {

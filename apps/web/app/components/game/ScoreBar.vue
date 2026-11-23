@@ -11,18 +11,21 @@ interface Props {
   successCount?: number;
   failCount?: number;
   ignoreSymbols?: boolean;
+  debounceDoubleLetters?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   successCount: 0,
   failCount: 0,
   ignoreSymbols: true,
+  debounceDoubleLetters: true,
 });
 
 const emit = defineEmits<{
   (e: "cyclePauseMode"): void;
   (e: "changeMode", mode: "write" | "choice"): void;
   (e: "toggleIgnoreSymbols"): void;
+  (e: "toggleDebounce"): void;
 }>();
 
 const accuracy = computed(() => {
@@ -59,6 +62,22 @@ const pauseModeLabel = computed(() => {
     </div>
 
     <div class="flex items-center gap-2">
+      <!-- Anti-Chatter Debounce Toggle -->
+      <button
+        v-if="gameMode === 'write'"
+        type="button"
+        :title="debounceDoubleLetters ? 'Anti-Chatter enabled (filters accidental double characters)' : 'Standard typing'"
+        class="px-2.5 py-1 rounded-lg font-medium transition border text-[11px]"
+        :class="[
+          debounceDoubleLetters
+            ? 'bg-sky-950/70 border-sky-700 text-sky-300'
+            : 'bg-gray-800 border-gray-700 text-gray-400'
+        ]"
+        @click="emit('toggleDebounce')"
+      >
+        {{ debounceDoubleLetters ? '🛡️ Anti-Chatter' : '🛡️ Chatter: Off' }}
+      </button>
+
       <!-- Ignore Symbols Toggle -->
       <button
         type="button"

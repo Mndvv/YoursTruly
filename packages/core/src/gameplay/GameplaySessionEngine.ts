@@ -1,51 +1,67 @@
-import type { LyricLineData, SongDetailDto, WordTokenData } from "@yourstruly/contracts";
+import type {
+  DifficultyLevel,
+  LyricLineData,
+  PauseMode,
+  SongDetailDto,
+  WordTokenData,
+} from "@yourstruly/contracts";
 import { SyncClockEngine } from "../sync/SyncClockEngine";
 import { ActiveGapResolver } from "./ActiveGapResolver";
-import { AnswerValidator } from "./AnswerValidator";
-import { AutoPauseController, type PauseMode } from "./AutoPauseController";
+import { AnswerValidator, type ValidationOptions } from "./AnswerValidator";
+import { AutoPauseController } from "./AutoPauseController";
 import { ChoiceDistractorGenerator } from "./ChoiceDistractorGenerator";
 import { GameplayScorer } from "./GameplayScorer";
-import type { DifficultyLevel } from "./GapGenerator";
 import { GapGenerator } from "./GapGenerator";
+import type { EngineConfig, PlaybackActions } from "./VerseLoopManager";
 import { VerseLoopManager } from "./VerseLoopManager";
 import { WordHintHelper } from "./WordHintHelper";
-
-export interface PlaybackActions {
-  onAutoPause?: () => void;
-  onRewindVerse?: (toMs: number) => void;
-  onSkipVerse?: () => void;
-}
+import { WordTransitionHelper } from "./WordTransitionHelper";
 
 export class GameplaySessionEngine {
   private readonly allWords: WordTokenData[];
   private readonly scorer = new GameplayScorer();
   private readonly validator = new AnswerValidator();
   private readonly autoPauseCtrl = new AutoPauseController();
-  private readonly distractorGen = new ChoiceDistractorGenerator();
   private readonly hintHelper = new WordHintHelper();
   private readonly clock = new SyncClockEngine();
   private readonly gapResolver = new ActiveGapResolver();
   private readonly verseLoop: VerseLoopManager;
+  private readonly transitions: WordTransitionHelper;
   private ignoreSymbols = true;
+  private debounceDoubleLetters = true;
 
   public readonly gapIds = new Set<string>();
   public readonly solvedGapIds = new Set<string>();
   public readonly failedGapIds = new Set<string>();
   public readonly wrongChoices = new Set<string>();
   public activeLine: LyricLineData | null = null;
-  public activeWord: WordTokenData | null = null;
-  public activeChoices: string[] = [];
   public currentHint: string | null = null;
   public hintLevel = 0;
   public consecutiveFails = 0;
 
+  public get activeWord(): WordTokenData | null {
+    return this.transitions.activeWord;
+  }
+  public get activeChoices(): string[] {
+    return this.transitions.activeChoices;
+  }
+  public set activeChoices(val: string[]) {
+    this.transitions.activeChoices = val;
+  }
+
   constructor(
-    private readonly song: SongDetailDto,
+    public readonly song: SongDetailDto,
     pauseMode: PauseMode = "verse_loop",
   ) {
     this.allWords = song.lyricsData.lines.flatMap((l) => l.words);
     this.autoPauseCtrl.setPauseMode(pauseMode);
     this.verseLoop = new VerseLoopManager(this.autoPauseCtrl, this.gapResolver);
+    this.transitions = new WordTransitionHelper(
+      this.gapResolver,
+      new ChoiceDistractorGenerator(),
+      this.autoPauseCtrl,
+      this.allWords,
+    );
   }
 
   public initGaps(difficulty: DifficultyLevel): void {
@@ -57,9 +73,12 @@ export class GameplaySessionEngine {
     this.resetWordState();
   }
 
-  public configure(opts: { pauseMode?: PauseMode; ignoreSymbols?: boolean }): void {
+  public configure(opts: EngineConfig): void {
     if (opts.pauseMode) this.autoPauseCtrl.setPauseMode(opts.pauseMode);
     if (opts.ignoreSymbols !== undefined) this.ignoreSymbols = opts.ignoreSymbols;
+    if (opts.debounceDoubleLetters !== undefined) {
+      this.debounceDoubleLetters = opts.debounceDoubleLetters;
+    }
   }
 
   public tick(currentTimeMs: number, actions: PlaybackActions): void {
@@ -67,22 +86,36 @@ export class GameplaySessionEngine {
     const state = this.clock.resolveState(lines, currentTimeMs, this.song.globalOffsetMs);
     this.activeLine = (state.activeLine as LyricLineData | null) ?? null;
     if (!this.activeLine) {
-      this.activeWord = null;
-      this.activeChoices = [];
+      this.transitions.activeWord = null;
+      this.transitions.activeChoices = [];
       return;
     }
-    if (this.handleVerse(this.activeLine, state.effectiveTimeMs, actions)) return;
-    this.ensureTargetGap(this.activeLine);
-    this.checkStrictPause(state.effectiveTimeMs, actions.onAutoPause);
+    const handled = this.verseLoop.handleVerse(
+      this.activeLine,
+      state.effectiveTimeMs,
+      this.gapIds,
+      this.isDone,
+      actions,
+      (unsolved) => this.skipVerseGaps(unsolved),
+      (first) => first && this.transitions.transitionToWord(first, () => this.resetWordState()),
+    );
+    if (handled) return;
+    this.transitions.ensureTargetGap(this.activeLine, this.gapIds, this.isDone, () =>
+      this.resetWordState(),
+    );
+    this.verseLoop.checkStrictPause(
+      this.activeWord,
+      this.gapIds,
+      this.isDone,
+      state.effectiveTimeMs,
+      actions.onAutoPause,
+    );
   }
 
   public submitAnswer(input: string, isAutoCheck = false): boolean {
     if (!this.activeWord) return false;
     const word = this.activeWord;
-    const ok = this.validator.validate(input, word.text, {
-      ignoreApostrophes: this.ignoreSymbols,
-      stripPunctuation: this.ignoreSymbols,
-    });
+    const ok = this.validator.validate(input, word.text, this.validationOpts);
     if (!ok) return isAutoCheck ? false : this.handleFailure(word);
     this.consecutiveFails = 0;
     this.solvedGapIds.add(word.id);
@@ -103,20 +136,26 @@ export class GameplaySessionEngine {
     const text = this.activeWord.text;
     if (isChoiceMode) {
       this.activeChoices = this.hintHelper.get5050Choices(text, this.activeChoices);
-    } else {
-      this.hintLevel += 1;
-      this.currentHint = this.hintHelper.getLetterHint(text, this.hintLevel);
-      if (this.hintHelper.isFullyRevealed(text, this.hintLevel)) {
-        this.failedGapIds.add(this.activeWord.id);
-        this.scorer.recordFailure();
-        this.autoPauseCtrl.markSolved(this.activeWord.id);
-        this.advanceToNextGap();
-      }
+      return;
+    }
+    this.hintLevel += 1;
+    this.currentHint = this.hintHelper.getLetterHint(text, this.hintLevel);
+    if (this.hintHelper.isFullyRevealed(text, this.hintLevel)) {
+      this.scorer.recordFailure();
+      this.failWord(this.activeWord);
     }
   }
 
   public getScorer(): GameplayScorer {
     return this.scorer;
+  }
+
+  private get validationOpts(): ValidationOptions {
+    return {
+      ignoreApostrophes: this.ignoreSymbols,
+      stripPunctuation: this.ignoreSymbols,
+      debounceDoubleLetters: this.debounceDoubleLetters,
+    };
   }
 
   private isDone = (id: string): boolean => this.solvedGapIds.has(id) || this.failedGapIds.has(id);
@@ -128,69 +167,31 @@ export class GameplaySessionEngine {
     this.consecutiveFails = 0;
   }
 
-  private handleVerse(line: LyricLineData, timeMs: number, actions: PlaybackActions): boolean {
-    const res = this.verseLoop.evaluate(line, timeMs, this.gapIds, this.isDone);
-    if (!res) return false;
-    if (res.shouldSkip) {
-      for (const g of res.unsolvedGaps) {
-        this.failedGapIds.add(g.id);
-        this.scorer.recordFailure();
-      }
-      this.advanceToNextGap();
-      actions.onSkipVerse?.();
-    } else {
-      actions.onRewindVerse?.(res.rewind.rewindToMs);
-      const first = this.gapResolver.findTargetGap(line, this.gapIds, this.isDone);
-      if (first) this.transitionToWord(first);
-    }
-    return true;
+  private advanceToNextGap(): void {
+    this.transitions.advanceToNextGap(this.activeLine, this.gapIds, this.isDone, () =>
+      this.resetWordState(),
+    );
   }
 
-  private ensureTargetGap(line: LyricLineData): void {
-    const ok =
-      this.activeWord &&
-      !this.isDone(this.activeWord.id) &&
-      line.words.some((w) => w.id === this.activeWord?.id);
-    if (ok) return;
-    const target = this.gapResolver.findTargetGap(line, this.gapIds, this.isDone);
-    if (target) this.transitionToWord(target);
-    else {
-      this.activeWord = null;
-      this.activeChoices = [];
+  private skipVerseGaps(unsolved: WordTokenData[]): void {
+    for (const g of unsolved) {
+      this.failedGapIds.add(g.id);
+      this.scorer.recordFailure();
     }
+    this.advanceToNextGap();
   }
 
-  private checkStrictPause(effectiveMs: number, onAutoPause?: () => void): void {
-    if (!this.activeWord || !this.gapIds.has(this.activeWord.id) || this.isDone(this.activeWord.id))
-      return;
-    if (this.autoPauseCtrl.checkWordAutoPause(this.activeWord, true, false, effectiveMs))
-      onAutoPause?.();
+  private failWord(word: WordTokenData): void {
+    this.failedGapIds.add(word.id);
+    this.autoPauseCtrl.markSolved(word.id);
+    this.advanceToNextGap();
   }
 
   private handleFailure(word: WordTokenData): boolean {
     this.consecutiveFails += 1;
     this.scorer.recordFailure();
     if (this.autoPauseCtrl.getPauseMode() !== "strict" || this.consecutiveFails < 3) return false;
-    this.failedGapIds.add(word.id);
-    this.autoPauseCtrl.markSolved(word.id);
-    this.advanceToNextGap();
+    this.failWord(word);
     return true;
-  }
-
-  private transitionToWord(w: WordTokenData): void {
-    this.activeWord = w;
-    this.resetWordState();
-    this.activeChoices = this.distractorGen.generateChoices(w, this.allWords);
-  }
-
-  private advanceToNextGap(): void {
-    this.resetWordState();
-    const next = this.gapResolver.findTargetGap(this.activeLine, this.gapIds, this.isDone);
-    if (next) this.transitionToWord(next);
-    else {
-      this.activeWord = null;
-      this.activeChoices = [];
-      if (this.activeLine) this.autoPauseCtrl.markVerseCleared(this.activeLine.id);
-    }
   }
 }

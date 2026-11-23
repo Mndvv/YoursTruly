@@ -1,15 +1,21 @@
 <script setup lang="ts">
+import { ref } from "vue";
+
 interface Props {
   modelValue: string;
   placeholder?: string;
   disabled?: boolean;
   hasError?: boolean;
+  targetWord?: string;
+  debounceDoubleLetters?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   placeholder: "Type the missing word...",
   disabled: false,
   hasError: false,
+  targetWord: "",
+  debounceDoubleLetters: true,
 });
 
 const emit = defineEmits<{
@@ -19,16 +25,49 @@ const emit = defineEmits<{
   (e: "hint"): void;
 }>();
 
+const lastKey = ref("");
+const lastKeyTime = ref(0);
+
+function isChatterDuplicate(key: string): boolean {
+  if (!props.debounceDoubleLetters || key.length !== 1) return false;
+  const now = performance.now();
+  if (key.toLowerCase() === lastKey.value.toLowerCase() && now - lastKeyTime.value < 75) {
+    return true;
+  }
+
+  if (props.targetWord && props.modelValue.length > 0) {
+    const char = key.toLowerCase();
+    const prevChar = props.modelValue[props.modelValue.length - 1].toLowerCase();
+    if (char === prevChar) {
+      const cleanTarget = props.targetWord.toLowerCase().replace(/['’‘`]/g, "");
+      const targetExpected = cleanTarget[props.modelValue.length] ?? "";
+      if (targetExpected !== char) return true;
+    }
+  }
+
+  lastKey.value = key;
+  lastKeyTime.value = now;
+  return false;
+}
+
 function handleKeyDown(event: KeyboardEvent) {
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     emit("submit");
-  } else if (event.key === "Tab") {
+    return;
+  }
+  if (event.key === "Tab") {
     event.preventDefault();
     emit("replay");
-  } else if (event.key === "Control" || event.key === "F1") {
+    return;
+  }
+  if (event.key === "Control" || event.key === "F1") {
     event.preventDefault();
     emit("hint");
+    return;
+  }
+  if (isChatterDuplicate(event.key)) {
+    event.preventDefault();
   }
 }
 </script>

@@ -27,6 +27,19 @@ describe("Gameplay: AnswerValidator", () => {
     expect(validator.validate("dont", "don't", { ignoreApostrophes: false })).toBe(false);
   });
 
+  it("handles keyboard chatter double-character tolerance when enabled", () => {
+    expect(validator.validate("llike", "like", { debounceDoubleLetters: true })).toBe(true);
+    expect(validator.validate("likke", "like", { debounceDoubleLetters: true })).toBe(true);
+    expect(validator.validate("loook", "look", { debounceDoubleLetters: true })).toBe(true);
+    expect(validator.validate("llikkee", "like", { debounceDoubleLetters: true })).toBe(true);
+    // When disabled, duplicate letters should not match
+    expect(validator.validate("llike", "like", { debounceDoubleLetters: false })).toBe(false);
+    // Missing required double letters should still fail
+    expect(validator.validate("lok", "look", { debounceDoubleLetters: true })).toBe(false);
+    // Wrong characters should still fail
+    expect(validator.validate("llikeeX", "like", { debounceDoubleLetters: true })).toBe(false);
+  });
+
   it("rejects incorrect answers", () => {
     expect(validator.validate("blue", "yellow")).toBe(false);
   });

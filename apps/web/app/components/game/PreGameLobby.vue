@@ -10,6 +10,7 @@ interface Props {
   initialDifficulty?: DifficultyLevel;
   initialPauseMode?: PauseMode;
   initialIgnoreSymbols?: boolean;
+  initialDebounceDoubleLetters?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -17,6 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
   initialDifficulty: "intermediate",
   initialPauseMode: "verse_loop",
   initialIgnoreSymbols: true,
+  initialDebounceDoubleLetters: true,
 });
 
 const emit =
@@ -28,6 +30,7 @@ const emit =
         difficulty: DifficultyLevel;
         pauseMode: PauseMode;
         ignoreSymbols: boolean;
+        debounceDoubleLetters: boolean;
       },
     ) => void
   >();
@@ -36,6 +39,7 @@ const selectedMode = ref<"write" | "choice">(props.initialMode);
 const selectedDifficulty = ref<DifficultyLevel>(props.initialDifficulty);
 const selectedPauseMode = ref<PauseMode>(props.initialPauseMode);
 const selectedIgnoreSymbols = ref(props.initialIgnoreSymbols);
+const selectedDebounce = ref(props.initialDebounceDoubleLetters);
 
 const difficultyOptions: Array<{ level: DifficultyLevel; label: string; badge: string }> = [
   { level: "beginner", label: "Beginner", badge: "10% Gaps" },
@@ -68,6 +72,7 @@ function handleStart() {
     difficulty: selectedDifficulty.value,
     pauseMode: selectedPauseMode.value,
     ignoreSymbols: selectedIgnoreSymbols.value,
+    debounceDoubleLetters: selectedDebounce.value,
   });
 }
 </script>
@@ -163,18 +168,23 @@ function handleStart() {
       </div>
     </div>
 
-    <!-- Preference: Ignore Symbols & Apostrophes -->
-    <label class="flex items-center gap-3 p-3 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition">
-      <input
-        v-model="selectedIgnoreSymbols"
-        type="checkbox"
-        class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-800 border-gray-700"
-      />
-      <div class="flex-1 text-xs">
-        <span class="font-bold text-white">🔤 Ignore Apostrophes & Symbols</span>
-        <p class="text-gray-400 text-[11px]">Type <span class="font-mono text-indigo-300">dont</span> for <span class="font-mono text-indigo-300">don't</span>, ignore punctuation automatically</p>
-      </div>
-    </label>
+    <!-- Preferences: Symbols & Debounce -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <label class="flex items-center gap-2.5 p-2.5 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition">
+        <input v-model="selectedIgnoreSymbols" type="checkbox" class="w-4 h-4 rounded text-indigo-600 bg-gray-800 border-gray-700" />
+        <div class="flex-1 text-xs">
+          <span class="font-bold text-white block">🔤 Ignore Symbols</span>
+          <span class="text-gray-400 text-[10px]">dont matches don't</span>
+        </div>
+      </label>
+      <label class="flex items-center gap-2.5 p-2.5 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition">
+        <input v-model="selectedDebounce" type="checkbox" class="w-4 h-4 rounded text-indigo-600 bg-gray-800 border-gray-700" />
+        <div class="flex-1 text-xs">
+          <span class="font-bold text-white block">🛡️ Anti-Chatter</span>
+          <span class="text-gray-400 text-[10px]">Filter double letters like 'llike'</span>
+        </div>
+      </label>
+    </div>
 
     <div class="flex flex-col gap-2 pt-1">
       <AppButton size="lg" variant="primary" class="w-full text-base py-3 shadow-xl" @click="handleStart">
