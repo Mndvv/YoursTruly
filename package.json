@@ -8,7 +8,7 @@
     "dev:web": "bun --filter web dev",
     "dev": "bun --filter \"*\" dev",
     "build": "bun --filter \"*\" build",
-    "test": "bun test",
+    "test": "bun test ./packages/**/test/*.test.ts ./apps/**/test/*.test.ts",
     "lint": "biome check .",
     "format": "biome format --write ."
   },
