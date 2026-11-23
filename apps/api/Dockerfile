@@ -21,7 +21,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
 
-COPY --from=builder /app /app
+# Ensure data directory exists with non-root ownership for SQLite
+RUN mkdir -p /data && chown -R bun:bun /data
+
+COPY --from=builder --chown=bun:bun /app /app
 
 EXPOSE 4000
 USER bun

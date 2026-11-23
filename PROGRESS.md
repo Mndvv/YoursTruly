@@ -2,7 +2,7 @@
 
 ## Current State
 - **Current Phase:** Phase 9: Catalogue Export/Import, In-App YouTube Search, and Mobile Virtual Keyboard UX [COMPLETE]
-- **Active Task:** All features implemented, 52 unit tests passing, Biome clean (0 errors across 105 files), and production builds verified. Ready for commit.
+- **Active Task:** All features and Docker self-hosting verified. Both API and Web containers healthy in Docker Compose.
 - **Last Updated:** 2026-11-24
 
 ---
@@ -75,6 +75,7 @@
 - [x] Mobile-first layout with sticky video player and virtual-keyboard-safe spacing
 - [x] Multi-stage `apps/web/Dockerfile` with non-root user and Nitro server
 - [x] `docker-compose.yml` (SQLite default with optional PostgreSQL via `--profile postgres`)
+- [x] Fix Docker SQLite `/data` volume permissions for non-root `bun` user and tune healthcheck parameters
 - [x] Direct runner in `scripts/dev.ts` running API + Web concurrently on `bun run dev`
 - [x] Unified `bun run build` building both API and Web bundles cleanly
 - [x] Fixed Lyrica `timed_lyrics` payload integration in sync strategies
