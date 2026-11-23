@@ -17,6 +17,9 @@ const lyricArtistInput = ref("");
 const lyricSongInput = ref("");
 const statusError = ref<string | null>(null);
 
+const isCustomLyricsOpen = ref(false);
+const customLyricsInput = ref("");
+
 async function onFindVideo() {
   statusError.value = null;
   try {
@@ -39,6 +42,14 @@ async function onSearchCandidates() {
     );
   } catch (err: unknown) {
     statusError.value = err instanceof Error ? err.message : "Error searching candidates";
+  }
+}
+
+function onApplyCustomLyrics() {
+  try {
+    studio.useCustomLyrics(customLyricsInput.value);
+  } catch (err: unknown) {
+    statusError.value = err instanceof Error ? err.message : "Failed to parse custom lyrics";
   }
 }
 </script>
@@ -125,8 +136,31 @@ async function onSearchCandidates() {
         </div>
       </div>
 
-      <div v-else class="py-8 text-center text-gray-500 text-sm">
+      <div v-else class="py-6 text-center text-gray-500 text-sm">
         No lyric versions found for this query. Try adjusting the search keywords above!
+      </div>
+
+      <!-- Manual Paste Option -->
+      <div class="pt-3 border-t border-gray-800">
+        <button
+          type="button"
+          class="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+          @click="isCustomLyricsOpen = !isCustomLyricsOpen"
+        >
+          {{ isCustomLyricsOpen ? "▲ Hide Custom / Manual Input" : "✍️ Or Paste Custom / LRC Lyrics Manually" }}
+        </button>
+
+        <div v-if="isCustomLyricsOpen" class="mt-3 flex flex-col gap-2">
+          <textarea
+            v-model="customLyricsInput"
+            rows="5"
+            placeholder="Paste plain lyrics or LRC format (e.g. [00:16.10] Don't try to make yourself remember...)"
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-xs font-mono text-white placeholder-gray-500"
+          />
+          <AppButton size="sm" variant="secondary" @click="onApplyCustomLyrics">
+            Load Custom Lyrics
+          </AppButton>
+        </div>
       </div>
     </div>
 

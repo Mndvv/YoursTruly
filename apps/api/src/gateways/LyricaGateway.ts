@@ -22,6 +22,11 @@ export class LyricaGateway implements ILyricaGateway {
 
       const body = (await response.json()) as LyricaApiResponse;
       if (!response.ok) {
+        // Fallback gracefully if Groq API key is missing on Lyrica server
+        if (query.romanize && body.error?.message?.includes("Groq API key")) {
+          return this.fetchLyrics({ ...query, romanize: false }, sequence);
+        }
+
         return {
           status: "error",
           error: {

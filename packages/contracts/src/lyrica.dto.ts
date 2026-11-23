@@ -5,7 +5,7 @@ export const LyricaQuerySchema = z.object({
   song: z.string().min(1),
   timestamps: z.boolean().default(true),
   word: z.boolean().default(true),
-  romanize: z.boolean().default(true),
+  romanize: z.boolean().default(false),
   language: z.string().default("en"),
 });
 export type LyricaQuery = z.infer<typeof LyricaQuerySchema>;

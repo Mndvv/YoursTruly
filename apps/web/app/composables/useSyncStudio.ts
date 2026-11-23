@@ -81,6 +81,20 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
     currentStep.value = "sync";
   }
 
+  function useCustomLyrics(rawText: string) {
+    if (!rawText.trim()) throw new Error("Lyrics text cannot be empty");
+    const payload = {
+      source: "manual",
+      artist: artistName.value || "Unknown Artist",
+      title: songTitle.value || videoTitle.value,
+      hasTimestamps: /\[\d{2}:\d{2}/.test(rawText),
+      lyrics: rawText.trim(),
+    };
+    const normalized = normalizer.normalize(payload);
+    lyricsData.value = normalized.toData();
+    currentStep.value = "sync";
+  }
+
   function recordTapDown(timeMs: number) {
     recorder.onTapDown(timeMs);
   }
@@ -159,6 +173,7 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
     fetchYouTubeMetadata,
     searchCandidates,
     selectCandidate,
+    useCustomLyrics,
     recordTapDown,
     recordTapUp,
     toggleWordGap,

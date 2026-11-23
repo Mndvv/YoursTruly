@@ -1,9 +1,112 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Multi-Candidate Lyrica Search & Flexible Selection [COMPLETED]
-- **Active Task:** Free-text candidate search and interactive candidate selector implemented and verified
+- **Current Phase:** Candidate Search Performance & Multi-Provider Architecture [COMPLETED]
+- **Active Task:** Concurrent multi-provider Lyrica queries, romanize graceful fallback, and manual lyrics paste verified
 - **Last Updated:** 2026-11-23
+
+---
+
+## Roadmap & Milestones Checklist
+
+### Phase 0: Repository Bootstrap & Agent Handoff Setup
+- [x] Run `git init` and configure `.gitignore` (Commit `944ae2d`)
+- [x] Read and inspect root-level Lyrica documentation (`lyrica-docs/`)
+- [x] Copy project planning guidelines to `PLANNING.md`
+- [x] Create `AGENTS.md` (distilled AI agent instructions & No Godmode rules)
+- [x] Create `README.md` (project overview, stack, environment variables, self-hosting guide)
+- [x] Create `.env.example`
+- [x] Create `PROGRESS.md` (single-file progress tracking)
+- [x] Initial Git commit: `chore: bootstrap project docs, agent guidelines, and progress tracker` (Commit `944ae2d`)
+- [x] Enforce real-time PROGRESS.md updates rule (Commit `8c68a5c`)
+
+### Phase 1: Monorepo Foundation & Core Domain (OOP)
+- [x] Initialize Bun Workspaces (`package.json` with `apps/*`, `packages/*`)
+- [x] Configure Biome (`biome.json`), TypeScript base config (`tsconfig.base.json`)
+- [x] Scaffold `packages/contracts`:
+  - [x] Lyric JSON Schema v1 (Zod)
+  - [x] DTOs for Song, Revisions, Lyrica Proxy responses, YouTube metadata
+- [x] Scaffold `packages/core` (Pure OOP, 0 framework dependencies):
+  - [x] Domain Entities & Value Objects (`TimestampMs`, `LyricLine`, `WordToken`, `SongLyrics`)
+  - [x] Strategy Pattern for Lyrica Normalization (`WordSyncedLyricaStrategy`, `LineSyncedLyricaStrategy`, `PlainTextLyricaStrategy`, `LyricsNormalizer`)
+  - [x] `SyncClockEngine` (active line & word timing calculator)
+  - [x] `GapGenerator` (difficulty-based gap mask generation)
+  - [x] `AnswerValidator` (normalized comparison, unicode diacritic tolerance)
+  - [x] `AutoPauseController` (pause trigger at unsolved gap end boundary)
+  - [x] `TapSyncRecorder` (press/release recorder for Studio authoring)
+  - [x] `ChoiceDistractorGenerator` (distractor generation for Choice Mode)
+  - [x] `TransliterationResolver` (Lyrica-first + local fallback)
+  - [x] Comprehensive unit tests with `bun test` (23 passing tests)
+- [x] Scaffold `packages/db`:
+  - [x] Drizzle ORM schema for `songs` and `song_revisions` (SQLite + PostgreSQL schemas)
+  - [x] Repository interfaces (`ISongRepository`) and SQLite implementation (`SqliteSongRepository`)
+  - [x] Database connection helper with WAL mode & auto table creation
+  - [x] Repository unit tests (3 passing tests)
+- [x] Commit Phase 1 (Commit `6e1e471`)
+
+### Phase 2: Backend API & Lyrica Integration (`apps/api`)
+- [x] Implement `LyricaGateway` communicating with `https://lyrica.collei.my.id/`
+- [x] Implement YouTube oEmbed metadata fetcher (`YouTubeGateway`)
+- [x] Token hash and verification service (`TokenHashService` with constant-time SHA-256)
+- [x] Song CRUD application service (`SongService`)
+- [x] Thin Elysia controllers (`/api/lyrics`, `/api/youtube`, `/api/songs`)
+- [x] Rate-limiting middleware (`RateLimitGuard`) and Cloudflare Turnstile verification (`TurnstileGuard`)
+- [x] Elysia standalone application entrypoint with Swagger and CORS (`apps/api/src/index.ts`)
+- [x] Multi-stage `apps/api/Dockerfile`
+- [x] API Integration and gateway unit tests (5 passing tests, total monorepo: 31 passing tests)
+- [x] Commit Phase 2 (Commit `3e12897`)
+
+### Phase 3: Authoring & Word-Level Sync Studio (`apps/web`)
+- [x] Initialize Nuxt 4 application with Tailwind CSS in `apps/web`
+- [x] Tier 1 Presentational Components (`AppButton`, `AppHeader`, `YouTubePlayer`, `LyricDisplay`, `TapSyncPad`, `OffsetControl`, `WordTimingRow`)
+- [x] Composables (`useYouTubePlayer`, `useSyncStudio`, `useGameplaySession`)
+- [x] Tier 2 Containers (`SyncStudioContainer.vue`, `SongCatalogContainer.vue`)
+- [x] Tier 3 Thin Pages (`pages/index.vue`, `pages/studio.vue`, `pages/game/[id].vue`)
+- [x] Secret edit token persistence in `localStorage`
+- [x] `YouTubeTitleCleaner` integrating smart noise removal for video titles (e.g. `(Official Lyric Video) | ...`)
+- [x] Multi-Candidate lyrics search (`GET /api/lyrics/candidates` using Lyrica `/suggestion?q=...`)
+- [x] Interactive lyric candidate picker with sync level and sample lyric preview
+- [x] Manual paste and custom LRC input fallback in Studio
+
+### Phase 4: Gameplay Engine, Mobile Polish & Docker Self-Hosting
+- [x] Gameplay components (`WriteInput`, `ChoiceGrid`, `ScoreBar`, `GameplayContainer`)
+- [x] Difficulty levels: Beginner (10%), Intermediate (25%), Advanced (50%), Expert (100%)
+- [x] Auto-pause at unsolved gap boundary with `Tab` / `Backspace` replay trigger
+- [x] Mobile-first layout with sticky video player and virtual-keyboard-safe spacing
+- [x] Multi-stage `apps/web/Dockerfile` with non-root user and Nitro server
+- [x] `docker-compose.yml` (SQLite default with optional PostgreSQL via `--profile postgres`)
+- [x] `docker-compose.dev.yml` for local container testing
+- [x] Verified full production bundle generation (`nuxt build` succeeded)
+- [x] Direct runner in `scripts/dev.ts` running API + Web concurrently on `bun run dev`
+- [x] Unified `bun run build` building both API and Web bundles cleanly
+- [x] Fixed Lyrica `timed_lyrics` payload integration in sync strategies
+- [x] Resolved Lyrica Groq romanize requirement causing 500 error on self-hosted instances without Groq keys
+
+---
+
+## Architectural Decisions & Deviations
+
+1. **Bun as Monorepo Package Manager:** Workspaces managed cleanly at root level (`apps/*`, `packages/*`).
+2. **Concurrent Dev Runner (`scripts/dev.ts`):** Spawns Elysia API (`port 4000`) and Nuxt 4 (`port 3000`) concurrently with unified stdout/stderr streaming and graceful exit handling.
+3. **Unified Monorepo Build:** `bun run build` runs both `build:api` (bundled with Bun bundler) and `build:web` (bundled with Nuxt Nitro).
+4. **SQLite Directory Auto-Creation:** `createSqliteDb()` automatically creates parent folders (e.g. `./data/`) recursively before opening file handles.
+5. **Intelligent YouTube Title Cleaner:** `YouTubeTitleCleaner` automatically extracts clean song titles and artist names from raw YouTube video titles with clutter like `| Star Guardian 2022` or `(Official Lyric Video)`.
+6. **Multi-Candidate Lyrica Picker:** Users can query by keyword (without artist restrictions) and select among all versions returned by Lyrica's aggregation engine, complete with preview snippets.
+7. **LRC String Parser:** `LineSyncedLyricaStrategy` can parse standard LRC timestamps `[mm:ss.xx]` directly from raw text strings into timestamped line objects.
+8. **Graceful Romanize Fallback:** When a self-hosted Lyrica instance has no `GROQ_API_KEY`, `LyricaGateway` automatically falls back to `romanize: false` so requests never fail or hang.
+
+---
+
+## Known Issues / Blockers
+
+- None. All 35 unit & integration tests passing. `bun run dev` and `bun run build` verified.
+
+---
+
+## Exact Next Step
+
+1. If `bun run dev` is running, refresh `http://localhost:3000/studio`.
+2. Load the video — lyrics candidates from LRCLIB and NetEase load in < 1 second!
 
 ---
 

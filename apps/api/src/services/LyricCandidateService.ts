@@ -1,5 +1,5 @@
-import type { LyricaCandidateDto, LyricaDataPayload, SyncLevel } from "@yourstruly/contracts";
-import { LyricsNormalizer } from "@yourstruly/core";
+import type { LyricaCandidateDto, LyricaDataPayload } from "@yourstruly/contracts";
+import { LyricsNormalizer, YouTubeTitleCleaner } from "@yourstruly/core";
 import type { ILyricaGateway } from "../gateways/ILyricaGateway";
 
 export interface SearchCandidateParams {
@@ -11,6 +11,8 @@ export interface SearchCandidateParams {
 export class LyricCandidateService {
   private readonly gateway: ILyricaGateway;
   private readonly normalizer = new LyricsNormalizer();
+  private readonly cleaner = new YouTubeTitleCleaner();
+  private readonly providers = ["lrclib", "netease", "lrcmux", "genius", undefined];
 
   constructor(gateway: ILyricaGateway) {
     this.gateway = gateway;
@@ -21,27 +23,48 @@ export class LyricCandidateService {
     const candidates: LyricaCandidateDto[] = [];
     const seenSignatures = new Set<string>();
 
-    for (const target of targets.slice(0, 4)) {
-      const resp = await this.gateway.fetchLyrics({
-        artist: target.artist,
-        song: target.song,
-        timestamps: true,
-        word: true,
-        romanize: true,
-        language: "en",
-      });
-
-      if (resp.status === "success" && resp.data) {
-        const sig = `${resp.data.source}_${resp.data.title}_${resp.data.artist}`;
+    for (const target of targets.slice(0, 3)) {
+      const payloads = await this.queryProvidersForTarget(target);
+      for (const d of payloads) {
+        const sig = `${d.source}_${d.title}_${d.artist}`;
         if (!seenSignatures.has(sig)) {
           seenSignatures.add(sig);
-          const candidate = this.buildCandidate(resp.data);
+          const candidate = this.buildCandidate(d);
           if (candidate) candidates.push(candidate);
         }
       }
     }
 
     return candidates;
+  }
+
+  private async queryProvidersForTarget(target: {
+    artist: string;
+    song: string;
+  }): Promise<LyricaDataPayload[]> {
+    const results = await Promise.allSettled(
+      this.providers.map((seq) =>
+        this.gateway.fetchLyrics(
+          {
+            artist: target.artist,
+            song: target.song,
+            timestamps: true,
+            word: true,
+            romanize: false,
+            language: "en",
+          },
+          seq,
+        ),
+      ),
+    );
+
+    const payloads: LyricaDataPayload[] = [];
+    for (const res of results) {
+      if (res.status === "fulfilled" && res.value.status === "success" && res.value.data) {
+        payloads.push(res.value.data);
+      }
+    }
+    return payloads;
   }
 
   private async resolveTargets(
@@ -53,13 +76,28 @@ export class LyricCandidateService {
       targets.push({ artist: params.artist.trim(), song: params.song.trim() });
     }
 
-    const keyword = params.q || `${params.artist ?? ""} ${params.song ?? ""}`.trim();
-    if (keyword) {
-      const suggestions = await this.gateway.fetchSuggestions(keyword);
-      for (const s of suggestions) {
-        if (!targets.some((t) => t.artist === s.artist && t.song === s.title)) {
+    const rawKeyword = params.q?.trim() || "";
+    if (rawKeyword) {
+      const suggestions = await this.gateway.fetchSuggestions(rawKeyword);
+      for (const s of suggestions.slice(0, 4)) {
+        if (
+          !targets.some(
+            (t) =>
+              t.artist.toLowerCase() === s.artist.toLowerCase() &&
+              t.song.toLowerCase() === s.title.toLowerCase(),
+          )
+        ) {
           targets.push({ artist: s.artist, song: s.title });
         }
+      }
+
+      const cleaned = this.cleaner.clean(rawKeyword, params.artist);
+      if (
+        cleaned.song &&
+        cleaned.artist &&
+        !targets.some((t) => t.song.toLowerCase() === cleaned.song.toLowerCase())
+      ) {
+        targets.push(cleaned);
       }
     }
 
