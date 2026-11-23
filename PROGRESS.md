@@ -2,7 +2,7 @@
 
 ## Current State
 - **Current Phase:** Phase 9: Catalogue Export/Import, In-App YouTube Search, and Mobile Virtual Keyboard UX [COMPLETE]
-- **Active Task:** All features and Docker self-hosting verified. Both API and Web containers healthy in Docker Compose.
+- **Active Task:** All features, Docker self-hosting, LAN/mobile API reverse proxy, and port 4000 mapping verified. Both containers healthy and accessible on LAN.
 - **Last Updated:** 2026-11-24
 
 ---
@@ -76,6 +76,7 @@
 - [x] Multi-stage `apps/web/Dockerfile` with non-root user and Nitro server
 - [x] `docker-compose.yml` (SQLite default with optional PostgreSQL via `--profile postgres`)
 - [x] Fix Docker SQLite `/data` volume permissions for non-root `bun` user and tune healthcheck parameters
+- [x] Expose API port 4000 on host and configure Nuxt Nitro server reverse proxy for seamless mobile/LAN access
 - [x] Direct runner in `scripts/dev.ts` running API + Web concurrently on `bun run dev`
 - [x] Unified `bun run build` building both API and Web bundles cleanly
 - [x] Fixed Lyrica `timed_lyrics` payload integration in sync strategies

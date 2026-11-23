@@ -7,7 +7,7 @@ import type {
 import { LyricTimingShifter, LyricsNormalizer, TapSyncRecorder } from "@yourstruly/core";
 import { computed, ref } from "vue";
 
-export function useSyncStudio(apiBase = "http://localhost:4000") {
+export function useSyncStudio(apiBase = "") {
   const normalizer = new LyricsNormalizer();
   const shifter = new LyricTimingShifter();
   const currentStep = ref<"youtube" | "lyrics" | "sync" | "done">("youtube");

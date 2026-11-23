@@ -50,7 +50,8 @@ export function createApp(
 // Start standalone server when executed directly
 if (import.meta.main) {
   const port = Number(process.env.PORT ?? 4000);
+  const hostname = process.env.HOST ?? "0.0.0.0";
   const app = createApp();
-  app.listen(port);
-  console.log(`YoursTruly API server listening on http://localhost:${port}`);
+  app.listen({ port, hostname });
+  console.log(`YoursTruly API server listening on http://${hostname}:${port}`);
 }
