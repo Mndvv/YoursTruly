@@ -136,7 +136,7 @@
   - Added comprehensive unit tests in `packages/core/test/session-engine.test.ts` (48 total passing tests).
   - Verified 0 Biome errors across 100 files and successful full monorepo build.
 
-### Phase 7: Fast-Typing UX, Keystroke Auto-Submit & Configurable Symbol Normalization
+### Phase 7: Fast-Typing UX, Keystroke Auto-Submit & Configurable Symbol Normalization (Commit `3d0311a`)
 - [x] **Real-Time Keystroke Auto-Submit:**
   - Updated `GameplaySessionEngine.ts` to support non-penalizing keystroke validation (`submitAnswer(input, isAutoCheck = true)`).
   - As soon as the user finishes typing the matching letters, the word auto-submits instantly, clears input, and advances to the next gap without requiring the Enter key.
