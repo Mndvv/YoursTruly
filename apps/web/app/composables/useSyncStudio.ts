@@ -4,10 +4,11 @@ import type {
   SongCreatedResponseDto,
   WordTokenData,
 } from "@yourstruly/contracts";
-import { TapSyncRecorder } from "@yourstruly/core";
+import { TapSyncRecorder, YouTubeTitleCleaner } from "@yourstruly/core";
 import { computed, ref } from "vue";
 
 export function useSyncStudio(apiBase = "http://localhost:4000") {
+  const titleCleaner = new YouTubeTitleCleaner();
   const currentStep = ref<"youtube" | "lyrics" | "sync" | "done">("youtube");
   const youtubeUrl = ref("");
   const youtubeId = ref("");
@@ -42,7 +43,9 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
     const data = await res.json();
     youtubeId.value = data.videoId;
     videoTitle.value = data.title;
-    artistName.value = data.authorName;
+    artistName.value = data.parsedArtist || data.authorName;
+    songTitle.value = data.parsedTitle || data.title;
+
     currentStep.value = "lyrics";
   }
 

@@ -6,17 +6,16 @@ import type { ILyricsNormalizationStrategy } from "./ILyricsNormalizationStrateg
 
 export class WordSyncedLyricaStrategy implements ILyricsNormalizationStrategy {
   public canHandle(payload: LyricaDataPayload): boolean {
-    if (!Array.isArray(payload.lyrics) || payload.lyrics.length === 0) {
-      return false;
-    }
-    return payload.lyrics.some(
+    const lines = this.getLines(payload);
+    if (lines.length === 0) return false;
+    return lines.some(
       (line) =>
         Array.isArray(line.words) && line.words.length > 0 && line.words[0].start !== undefined,
     );
   }
 
   public normalize(payload: LyricaDataPayload): SongLyrics {
-    const rawLines = payload.lyrics as LyricaLineItem[];
+    const rawLines = this.getLines(payload);
     const romanizedLines = this.splitRomanized(payload.romanized_lyrics);
 
     const lines = rawLines.map((rawLine, lineIdx) => {
@@ -47,6 +46,16 @@ export class WordSyncedLyricaStrategy implements ILyricsNormalizationStrategy {
       hasTransliteration: romanizedLines.length > 0,
       lines,
     });
+  }
+
+  private getLines(payload: LyricaDataPayload): LyricaLineItem[] {
+    if (Array.isArray(payload.timed_lyrics) && payload.timed_lyrics.length > 0) {
+      return payload.timed_lyrics;
+    }
+    if (Array.isArray(payload.lyrics)) {
+      return payload.lyrics;
+    }
+    return [];
   }
 
   private splitRomanized(romanized?: string): string[] {

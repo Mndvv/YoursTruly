@@ -32,6 +32,7 @@ export const LyricaDataPayloadSchema = z.object({
   title: z.string(),
   hasTimestamps: z.boolean().optional(),
   lyrics: z.union([z.string(), z.array(LyricaLineItemSchema)]),
+  timed_lyrics: z.array(LyricaLineItemSchema).optional(),
   translated_lyrics: z.string().optional(),
   romanized_lyrics: z.string().optional(),
 });

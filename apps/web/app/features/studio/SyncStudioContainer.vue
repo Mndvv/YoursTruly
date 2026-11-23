@@ -21,7 +21,7 @@ async function onFindVideo() {
   try {
     await studio.fetchYouTubeMetadata();
     lyricArtistInput.value = studio.artistName.value;
-    lyricSongInput.value = studio.videoTitle.value;
+    lyricSongInput.value = studio.songTitle.value;
   } catch (err: unknown) {
     statusError.value = err instanceof Error ? err.message : "Error loading video";
   }
@@ -74,9 +74,16 @@ async function onSearchLyrics() {
     <!-- Step 2: Lyrica Lyrics Search -->
     <div v-else-if="studio.currentStep.value === 'lyrics'" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
       <h2 class="text-lg font-bold text-white">2. Fetch Lyrics from Lyrica</h2>
+      <p class="text-xs text-gray-400">Review or adjust the artist and song title parsed from the video:</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input v-model="lyricArtistInput" type="text" placeholder="Artist" class="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white" />
-        <input v-model="lyricSongInput" type="text" placeholder="Song Title" class="bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white" />
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Artist Name</label>
+          <input v-model="lyricArtistInput" type="text" placeholder="Artist" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Song Title</label>
+          <input v-model="lyricSongInput" type="text" placeholder="Song Title" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white" />
+        </div>
       </div>
       <AppButton @click="onSearchLyrics">Search Lyrica & Start Sync</AppButton>
     </div>

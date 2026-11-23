@@ -1,4 +1,5 @@
 import type { YouTubeMetadataDto } from "@yourstruly/contracts";
+import { YouTubeTitleCleaner } from "@yourstruly/core";
 import type { IYouTubeGateway } from "./IYouTubeGateway";
 
 interface OEmbedResponse {
@@ -10,6 +11,7 @@ interface OEmbedResponse {
 
 export class YouTubeGateway implements IYouTubeGateway {
   private readonly timeoutMs: number;
+  private readonly titleCleaner = new YouTubeTitleCleaner();
 
   constructor(timeoutMs = 8000) {
     this.timeoutMs = timeoutMs;
@@ -32,13 +34,18 @@ export class YouTubeGateway implements IYouTubeGateway {
     }
 
     const data = (await response.json()) as OEmbedResponse;
+    const rawTitle = data.title ?? "Untitled Video";
+    const authorName = data.author_name ?? "Unknown Artist";
+    const parsed = this.titleCleaner.clean(rawTitle, authorName);
 
     return {
       videoId,
-      title: data.title ?? "Untitled Video",
-      authorName: data.author_name ?? "Unknown Artist",
+      title: rawTitle,
+      authorName,
       authorUrl: data.author_url,
       thumbnailUrl: data.thumbnail_url ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      parsedArtist: parsed.artist,
+      parsedTitle: parsed.song,
     };
   }
 

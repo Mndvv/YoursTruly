@@ -3,6 +3,7 @@ export * from "./domain/TimestampMs";
 export * from "./domain/WordToken";
 export * from "./domain/LyricLine";
 export * from "./domain/SongLyrics";
+export * from "./domain/YouTubeTitleCleaner";
 
 // Normalization
 export * from "./normalization/ILyricsNormalizationStrategy";
