@@ -12,6 +12,7 @@ const config = useRuntimeConfig();
 const studio = useSyncStudio(config.public.apiBase);
 
 const currentTimeMs = ref(0);
+const searchKeyword = ref("");
 const lyricArtistInput = ref("");
 const lyricSongInput = ref("");
 const statusError = ref<string | null>(null);
@@ -22,17 +23,22 @@ async function onFindVideo() {
     await studio.fetchYouTubeMetadata();
     lyricArtistInput.value = studio.artistName.value;
     lyricSongInput.value = studio.songTitle.value;
+    searchKeyword.value = `${studio.artistName.value} ${studio.songTitle.value}`.trim();
   } catch (err: unknown) {
     statusError.value = err instanceof Error ? err.message : "Error loading video";
   }
 }
 
-async function onSearchLyrics() {
+async function onSearchCandidates() {
   statusError.value = null;
   try {
-    await studio.searchLyrica(lyricArtistInput.value, lyricSongInput.value);
+    await studio.searchCandidates(
+      searchKeyword.value,
+      lyricArtistInput.value,
+      lyricSongInput.value,
+    );
   } catch (err: unknown) {
-    statusError.value = err instanceof Error ? err.message : "Error searching Lyrica";
+    statusError.value = err instanceof Error ? err.message : "Error searching candidates";
   }
 }
 </script>
@@ -71,21 +77,57 @@ async function onSearchLyrics() {
       <AppButton @click="onFindVideo">Load Video Metadata</AppButton>
     </div>
 
-    <!-- Step 2: Lyrica Lyrics Search -->
+    <!-- Step 2: Lyrica Lyrics Candidates -->
     <div v-else-if="studio.currentStep.value === 'lyrics'" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
-      <h2 class="text-lg font-bold text-white">2. Fetch Lyrics from Lyrica</h2>
-      <p class="text-xs text-gray-400">Review or adjust the artist and song title parsed from the video:</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label class="block text-xs text-gray-400 mb-1">Artist Name</label>
-          <input v-model="lyricArtistInput" type="text" placeholder="Artist" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white" />
-        </div>
-        <div>
-          <label class="block text-xs text-gray-400 mb-1">Song Title</label>
-          <input v-model="lyricSongInput" type="text" placeholder="Song Title" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white" />
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-white">2. Select Lyrics Version</h2>
+        <span class="text-xs text-gray-400">Powered by Lyrica</span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input
+          v-model="searchKeyword"
+          type="text"
+          placeholder="Search by keywords, song title, or artist..."
+          class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white"
+          @keydown.enter="onSearchCandidates"
+        />
+        <AppButton :disabled="studio.isSearchingLyrics.value" @click="onSearchCandidates">
+          {{ studio.isSearchingLyrics.value ? "Searching..." : "Search Versions" }}
+        </AppButton>
+      </div>
+
+      <!-- Candidate list -->
+      <div v-if="studio.isSearchingLyrics.value" class="py-8 text-center text-gray-400 font-mono text-sm">
+        Searching Lyrica across available providers...
+      </div>
+
+      <div v-else-if="studio.candidates.value.length > 0" class="flex flex-col gap-3 mt-2">
+        <div
+          v-for="candidate in studio.candidates.value"
+          :key="candidate.id"
+          class="p-4 rounded-xl border border-gray-800 bg-gray-850 hover:border-indigo-600 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-bold text-white">{{ candidate.title }}</span>
+              <span class="text-gray-400 text-sm">by {{ candidate.artist }}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-indigo-950 text-indigo-300 border border-indigo-800">
+                {{ candidate.source }} ({{ candidate.syncLevel }}-sync)
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 italic line-clamp-2">{{ candidate.sampleText }}</p>
+          </div>
+
+          <AppButton size="sm" variant="primary" @click="studio.selectCandidate(candidate)">
+            Select this version
+          </AppButton>
         </div>
       </div>
-      <AppButton @click="onSearchLyrics">Search Lyrica & Start Sync</AppButton>
+
+      <div v-else class="py-8 text-center text-gray-500 text-sm">
+        No lyric versions found for this query. Try adjusting the search keywords above!
+      </div>
     </div>
 
     <!-- Step 3: Tap-to-Sync & Fine Tuning -->

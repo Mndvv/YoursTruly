@@ -1,15 +1,17 @@
 import type {
   CreateSongDto,
+  LyricaCandidateDto,
   LyricsData,
   SongCreatedResponseDto,
-  WordTokenData,
 } from "@yourstruly/contracts";
-import { TapSyncRecorder, YouTubeTitleCleaner } from "@yourstruly/core";
+import { LyricsNormalizer, TapSyncRecorder, YouTubeTitleCleaner } from "@yourstruly/core";
 import { computed, ref } from "vue";
 
 export function useSyncStudio(apiBase = "http://localhost:4000") {
   const titleCleaner = new YouTubeTitleCleaner();
+  const normalizer = new LyricsNormalizer();
   const currentStep = ref<"youtube" | "lyrics" | "sync" | "done">("youtube");
+
   const youtubeUrl = ref("");
   const youtubeId = ref("");
   const videoTitle = ref("");
@@ -21,6 +23,8 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
   const videoEndMs = ref<number | null>(null);
 
   const lyricsData = ref<LyricsData | null>(null);
+  const candidates = ref<LyricaCandidateDto[]>([]);
+  const isSearchingLyrics = ref(false);
   const createdSong = ref<SongCreatedResponseDto | null>(null);
   const isSubmitting = ref(false);
 
@@ -47,19 +51,34 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
     songTitle.value = data.parsedTitle || data.title;
 
     currentStep.value = "lyrics";
+    await searchCandidates("", artistName.value, songTitle.value);
   }
 
-  async function searchLyrica(artist: string, song: string) {
-    artistName.value = artist;
-    songTitle.value = song;
-    const url = `${apiBase}/api/lyrics/search?artist=${encodeURIComponent(artist)}&song=${encodeURIComponent(song)}&normalize=true`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Could not find lyrics on Lyrica");
-    const data = await res.json();
-    if (data.normalized) {
-      lyricsData.value = data.normalized;
-      currentStep.value = "sync";
+  async function searchCandidates(keyword?: string, artist?: string, song?: string) {
+    isSearchingLyrics.value = true;
+    candidates.value = [];
+    try {
+      const params = new URLSearchParams();
+      if (keyword) params.append("q", keyword);
+      if (artist) params.append("artist", artist);
+      if (song) params.append("song", song);
+
+      const res = await fetch(`${apiBase}/api/lyrics/candidates?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to search lyrics candidates");
+      const data = await res.json();
+      candidates.value = data.candidates ?? [];
+      return candidates.value;
+    } finally {
+      isSearchingLyrics.value = false;
     }
+  }
+
+  function selectCandidate(candidate: LyricaCandidateDto) {
+    artistName.value = candidate.artist;
+    songTitle.value = candidate.title;
+    const normalized = normalizer.normalize(candidate.payload);
+    lyricsData.value = normalized.toData();
+    currentStep.value = "sync";
   }
 
   function recordTapDown(timeMs: number) {
@@ -130,13 +149,16 @@ export function useSyncStudio(apiBase = "http://localhost:4000") {
     videoStartMs,
     videoEndMs,
     lyricsData,
+    candidates,
+    isSearchingLyrics,
     allWords,
     currentWord,
     currentWordIndex,
     createdSong,
     isSubmitting,
     fetchYouTubeMetadata,
-    searchLyrica,
+    searchCandidates,
+    selectCandidate,
     recordTapDown,
     recordTapUp,
     toggleWordGap,

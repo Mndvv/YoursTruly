@@ -70,7 +70,38 @@ export class LineSyncedLyricaStrategy implements ILyricsNormalizationStrategy {
     if (Array.isArray(payload.lyrics)) {
       return payload.lyrics;
     }
+    if (typeof payload.lyrics === "string" && /\[\d{2}:\d{2}/.test(payload.lyrics)) {
+      return this.parseLrcString(payload.lyrics);
+    }
     return [];
+  }
+
+  private parseLrcString(lrc: string): LyricaLineItem[] {
+    const rawLines = lrc.split(/\r?\n/);
+    const parsed: { time: number; text: string }[] = [];
+
+    for (const line of rawLines) {
+      const match = line.match(/\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)/);
+      if (match) {
+        const min = Number.parseInt(match[1], 10);
+        const sec = Number.parseInt(match[2], 10);
+        const msRaw = match[3] ?? "0";
+        const ms = Number.parseInt(msRaw.padEnd(3, "0"), 10);
+        const time = (min * 60 + sec) * 1000 + ms;
+        const text = match[4].trim();
+        if (text) parsed.push({ time, text });
+      }
+    }
+
+    return parsed.map((item, idx) => {
+      const nextTime = parsed[idx + 1]?.time ?? item.time + 4000;
+      return {
+        id: `lrc_${idx}`,
+        text: item.text,
+        start_time: item.time,
+        end_time: nextTime,
+      };
+    });
   }
 
   private splitRomanized(romanized?: string): string[] {

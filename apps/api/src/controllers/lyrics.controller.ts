@@ -3,6 +3,7 @@ import { LyricsNormalizer } from "@yourstruly/core";
 import { Elysia, t } from "elysia";
 import type { ILyricaGateway } from "../gateways/ILyricaGateway";
 import type { RateLimitGuard } from "../middlewares/RateLimitGuard";
+import { LyricCandidateService } from "../services/LyricCandidateService";
 
 function toLyricaQuery(raw: Record<string, unknown>): LyricaQuery {
   return {
@@ -17,39 +18,63 @@ function toLyricaQuery(raw: Record<string, unknown>): LyricaQuery {
 
 export function createLyricsController(gateway: ILyricaGateway, rateLimiter?: RateLimitGuard) {
   const normalizer = new LyricsNormalizer();
+  const candidateService = new LyricCandidateService(gateway);
 
-  return new Elysia({ prefix: "/api/lyrics" }).get(
-    "/search",
-    async ({ query, set, headers }) => {
-      const ip = String(headers["x-forwarded-for"] || "127.0.0.1");
-      if (rateLimiter && !rateLimiter.check(ip).allowed) {
-        set.status = 429;
-        return { error: "Rate limit exceeded. Please wait a moment." };
-      }
+  return new Elysia({ prefix: "/api/lyrics" })
+    .get(
+      "/search",
+      async ({ query, set, headers }) => {
+        const ip = String(headers["x-forwarded-for"] || "127.0.0.1");
+        if (rateLimiter && !rateLimiter.check(ip).allowed) {
+          set.status = 429;
+          return { error: "Rate limit exceeded. Please wait a moment." };
+        }
 
-      const lyricaQuery = toLyricaQuery(query);
-      const raw = await gateway.fetchLyrics(lyricaQuery);
+        const raw = await gateway.fetchLyrics(toLyricaQuery(query));
+        if (raw.status !== "success" || !raw.data) {
+          set.status = 404;
+          return { error: raw.error?.message ?? "Lyrics not found" };
+        }
 
-      if (raw.status !== "success" || !raw.data) {
-        set.status = 404;
-        return { error: raw.error?.message ?? "Lyrics not found" };
-      }
+        const shouldNormalize = query.normalize === "true" || query.normalize === true;
+        const normalized = shouldNormalize ? normalizer.normalize(raw.data).toData() : null;
+        return { raw: raw.data, normalized };
+      },
+      {
+        query: t.Object({
+          artist: t.String({ minLength: 1 }),
+          song: t.String({ minLength: 1 }),
+          timestamps: t.Optional(t.Union([t.Boolean(), t.String()])),
+          word: t.Optional(t.Union([t.Boolean(), t.String()])),
+          romanize: t.Optional(t.Union([t.Boolean(), t.String()])),
+          language: t.Optional(t.String()),
+          normalize: t.Optional(t.Union([t.Boolean(), t.String()])),
+        }),
+      },
+    )
+    .get(
+      "/candidates",
+      async ({ query, set, headers }) => {
+        const ip = String(headers["x-forwarded-for"] || "127.0.0.1");
+        if (rateLimiter && !rateLimiter.check(ip).allowed) {
+          set.status = 429;
+          return { error: "Rate limit exceeded. Please wait a moment." };
+        }
 
-      const shouldNormalize = query.normalize === "true" || query.normalize === true;
-      const normalized = shouldNormalize ? normalizer.normalize(raw.data).toData() : null;
+        const candidates = await candidateService.findCandidates({
+          q: query.q,
+          artist: query.artist,
+          song: query.song,
+        });
 
-      return { raw: raw.data, normalized };
-    },
-    {
-      query: t.Object({
-        artist: t.String({ minLength: 1 }),
-        song: t.String({ minLength: 1 }),
-        timestamps: t.Optional(t.Union([t.Boolean(), t.String()])),
-        word: t.Optional(t.Union([t.Boolean(), t.String()])),
-        romanize: t.Optional(t.Union([t.Boolean(), t.String()])),
-        language: t.Optional(t.String()),
-        normalize: t.Optional(t.Union([t.Boolean(), t.String()])),
-      }),
-    },
-  );
+        return { candidates };
+      },
+      {
+        query: t.Object({
+          q: t.Optional(t.String()),
+          artist: t.Optional(t.String()),
+          song: t.Optional(t.String()),
+        }),
+      },
+    );
 }

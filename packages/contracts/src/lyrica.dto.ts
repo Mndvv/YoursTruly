@@ -49,3 +49,14 @@ export const LyricaApiResponseSchema = z.object({
     .optional(),
 });
 export type LyricaApiResponse = z.infer<typeof LyricaApiResponseSchema>;
+
+export const LyricaCandidateDtoSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  artist: z.string(),
+  source: z.string(),
+  syncLevel: z.enum(["word", "line", "plain"]),
+  sampleText: z.string(),
+  payload: LyricaDataPayloadSchema,
+});
+export type LyricaCandidateDto = z.infer<typeof LyricaCandidateDtoSchema>;
