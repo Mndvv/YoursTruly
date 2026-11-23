@@ -35,6 +35,11 @@ export class SqliteSongRepository implements ISongRepository {
     return rows.map((r) => this.mapToSummaryDto(r));
   }
 
+  public async exportAll(): Promise<SongDetailDto[]> {
+    const rows = this.db.select().from(songsTable).orderBy(desc(songsTable.createdAt)).all();
+    return rows.map((r) => this.mapToDetailDto(r));
+  }
+
   public async create(
     dto: CreateSongDto,
     editTokenHash: string,
@@ -100,6 +105,36 @@ export class SqliteSongRepository implements ISongRepository {
     const updated = await this.findById(id);
     if (!updated) throw new Error("Failed to retrieve updated song");
     return updated;
+  }
+
+  public async upsert(song: SongDetailDto, editTokenHash: string): Promise<void> {
+    const existing = await this.findById(song.id);
+    const now = new Date().toISOString();
+    const common = {
+      youtubeId: song.youtubeId,
+      title: song.title,
+      artist: song.artist,
+      languageCode: song.languageCode,
+      videoStartMs: song.videoStartMs ?? 0,
+      videoEndMs: song.videoEndMs ?? null,
+      globalOffsetMs: song.globalOffsetMs ?? 0,
+      lyricsDataJson: JSON.stringify(song.lyricsData),
+      updatedAt: now,
+    };
+    if (existing) {
+      this.db.update(songsTable).set(common).where(eq(songsTable.id, song.id)).run();
+    } else {
+      this.db
+        .insert(songsTable)
+        .values({
+          ...common,
+          id: song.id,
+          editTokenHash,
+          playCount: song.playCount ?? 0,
+          createdAt: song.createdAt ?? now,
+        })
+        .run();
+    }
   }
 
   public async incrementPlayCount(id: string): Promise<void> {

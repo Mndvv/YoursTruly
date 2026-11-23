@@ -13,6 +13,11 @@ describe("YouTubeGateway", () => {
     expect(yt.extractVideoId("not_valid")).toBeNull();
     expect(yt.extractVideoId("https://example.com/not-youtube")).toBeNull();
   });
+
+  it("handles search queries and returns empty on blank input", async () => {
+    const results = await yt.search("");
+    expect(results).toEqual([]);
+  });
 });
 
 describe("LyricaGateway", () => {

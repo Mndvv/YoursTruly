@@ -15,6 +15,21 @@ export function createSongsController(
       const offset = query.offset ? Number(query.offset) : 0;
       return songService.listSongs(limit, offset);
     })
+    .get("/export", async () => {
+      return songService.exportCatalogue();
+    })
+    .post(
+      "/import",
+      async ({ body, set }) => {
+        try {
+          return await songService.importCatalogue(body);
+        } catch (err: unknown) {
+          set.status = 400;
+          return { error: err instanceof Error ? err.message : "Import failed" };
+        }
+      },
+      { body: t.Any() },
+    )
     .get("/:id", async ({ params, set }) => {
       const song = await songService.getSong(params.id);
       if (!song) {

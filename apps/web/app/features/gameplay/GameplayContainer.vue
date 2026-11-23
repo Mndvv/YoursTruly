@@ -10,12 +10,14 @@ import LyricDisplay from "../../components/player/LyricDisplay.vue";
 import YouTubePlayer from "../../components/player/YouTubePlayer.vue";
 import AppButton from "../../components/ui/AppButton.vue";
 import { useGameplaySession } from "../../composables/useGameplaySession";
+import { useVirtualKeyboard } from "../../composables/useVirtualKeyboard";
 
 interface Props {
   song: SongDetailDto;
 }
 const props = defineProps<Props>();
 const game = useGameplaySession(props.song);
+const { isKeyboardOpen, keyboardHeight, dismissKeyboard } = useVirtualKeyboard();
 
 const isGameStarted = ref(false);
 const isPaused = ref(false);
@@ -38,13 +40,15 @@ function checkResumeAfterSolve(solved: boolean) {
   }
 }
 
-function onStartGame(config: {
+type StartConfig = {
   mode: "write" | "choice";
   difficulty: DifficultyLevel;
   pauseMode: PauseMode;
   ignoreSymbols?: boolean;
   debounceDoubleLetters?: boolean;
-}) {
+};
+
+function onStartGame(config: StartConfig) {
   game.gameMode.value = config.mode;
   game.difficulty.value = config.difficulty;
   game.pauseMode.value = config.pauseMode;
@@ -99,7 +103,11 @@ function replayCurrentLine() {
     @start="onStartGame"
   />
 
-  <div v-else class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4">
+  <div
+    v-else
+    class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4 transition-all duration-200"
+    :style="{ paddingBottom: isKeyboardOpen ? `${keyboardHeight}px` : '1rem' }"
+  >
     <div class="flex items-center justify-between">
       <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium">← Exit Game</NuxtLink>
       <button
@@ -178,6 +186,17 @@ function replayCurrentLine() {
         @select="(c) => checkResumeAfterSolve(game.selectChoice(c))"
         @hint="game.giveHint"
       />
+    </div>
+
+    <!-- Floating Virtual Keyboard Toolbar on Mobile -->
+    <div v-if="isKeyboardOpen" class="fixed bottom-3 right-4 z-50 sm:hidden">
+      <button
+        type="button"
+        class="px-3 py-1.5 rounded-full bg-gray-900 border border-gray-700 text-xs font-semibold text-gray-200 shadow-xl backdrop-blur flex items-center gap-1 active:scale-95 transition"
+        @click="dismissKeyboard"
+      >
+        <span>Hide Keyboard ✕</span>
+      </button>
     </div>
   </div>
 </template>

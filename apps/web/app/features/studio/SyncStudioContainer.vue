@@ -9,6 +9,7 @@ import OffsetControl from "../../components/studio/OffsetControl.vue";
 import TapSyncPad from "../../components/studio/TapSyncPad.vue";
 import TrackAlignmentControl from "../../components/studio/TrackAlignmentControl.vue";
 import WordTimingRow from "../../components/studio/WordTimingRow.vue";
+import YouTubeVideoSelector from "../../components/studio/YouTubeVideoSelector.vue";
 import AppButton from "../../components/ui/AppButton.vue";
 import { useSyncStudio } from "../../composables/useSyncStudio";
 
@@ -42,7 +43,8 @@ const previewWordId = computed<string | null>(() => {
     : (w as { id: string }).id;
 });
 
-async function onFindVideo() {
+async function onFindVideo(urlOrId?: string) {
+  if (urlOrId) studio.youtubeUrl.value = urlOrId;
   statusError.value = null;
   try {
     await studio.fetchYouTubeMetadata();
@@ -93,16 +95,12 @@ function onApplyCustom(lyrics: string) {
     </div>
 
     <!-- Step 1: YouTube -->
-    <div v-if="studio.currentStep.value === 'youtube'" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col gap-4">
-      <h2 class="text-lg font-bold text-white">1. Select YouTube Video</h2>
-      <input
-        v-model="studio.youtubeUrl.value"
-        type="text"
-        placeholder="Paste YouTube Video URL or ID (e.g., https://www.youtube.com/watch?v=...)"
-        class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      />
-      <AppButton @click="onFindVideo">Load Video Metadata</AppButton>
-    </div>
+    <YouTubeVideoSelector
+      v-if="studio.currentStep.value === 'youtube'"
+      :api-base="config.public.apiBase"
+      :initial-url="studio.youtubeUrl.value"
+      @select="onFindVideo"
+    />
 
     <!-- Step 2: Lyrica Lyrics Candidates -->
     <LyricCandidatePicker

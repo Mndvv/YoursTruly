@@ -70,6 +70,12 @@ function handleKeyDown(event: KeyboardEvent) {
     event.preventDefault();
   }
 }
+
+function handleFocus(event: FocusEvent) {
+  if (typeof window !== "undefined" && window.innerWidth < 640) {
+    (event.target as HTMLElement)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
 </script>
 
 <template>
@@ -93,6 +99,7 @@ function handleKeyDown(event: KeyboardEvent) {
         ]"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @keydown="handleKeyDown"
+        @focus="handleFocus"
       />
     </div>
 

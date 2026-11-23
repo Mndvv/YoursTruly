@@ -53,3 +53,17 @@ export const SongCreatedResponseDtoSchema = z.object({
   editToken: z.string(),
 });
 export type SongCreatedResponseDto = z.infer<typeof SongCreatedResponseDtoSchema>;
+
+export const CatalogueExportDtoSchema = z.object({
+  version: z.literal(1),
+  exportedAt: z.string(),
+  songs: z.array(SongDetailDtoSchema),
+});
+export type CatalogueExportDto = z.infer<typeof CatalogueExportDtoSchema>;
+
+export const CatalogueImportResultDtoSchema = z.object({
+  importedCount: z.number().int().nonnegative(),
+  skippedCount: z.number().int().nonnegative(),
+  errors: z.array(z.string()),
+});
+export type CatalogueImportResultDto = z.infer<typeof CatalogueImportResultDtoSchema>;

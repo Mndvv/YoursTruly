@@ -1,6 +1,7 @@
-import type { YouTubeMetadataDto } from "@yourstruly/contracts";
+import type { YouTubeMetadataDto, YouTubeSearchResultDto } from "@yourstruly/contracts";
 import { YouTubeTitleCleaner } from "@yourstruly/core";
 import type { IYouTubeGateway } from "./IYouTubeGateway";
+import { YouTubeSearchScraper } from "./YouTubeSearchScraper";
 
 interface OEmbedResponse {
   title: string;
@@ -12,9 +13,11 @@ interface OEmbedResponse {
 export class YouTubeGateway implements IYouTubeGateway {
   private readonly timeoutMs: number;
   private readonly titleCleaner = new YouTubeTitleCleaner();
+  private readonly scraper: YouTubeSearchScraper;
 
   constructor(timeoutMs = 8000) {
     this.timeoutMs = timeoutMs;
+    this.scraper = new YouTubeSearchScraper(timeoutMs);
   }
 
   public async fetchMetadata(rawInput: string): Promise<YouTubeMetadataDto> {
@@ -47,6 +50,10 @@ export class YouTubeGateway implements IYouTubeGateway {
       parsedArtist: parsed.artist,
       parsedTitle: parsed.song,
     };
+  }
+
+  public async search(query: string, limit = 10): Promise<YouTubeSearchResultDto[]> {
+    return this.scraper.search(query, limit);
   }
 
   public extractVideoId(input: string): string | null {

@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Verse-Loop Auto-Submit on Rewind & Keyboard Debounce / Chatter Prevention [COMPLETE]
-- **Active Task:** All unit tests, Biome linting, and build verification completed. Ready for commit.
+- **Current Phase:** Phase 9: Catalogue Export/Import, In-App YouTube Search, and Mobile Virtual Keyboard UX [COMPLETE]
+- **Active Task:** All features implemented, 52 unit tests passing, Biome clean (0 errors across 105 files), and production builds verified. Ready for commit.
 - **Last Updated:** 2026-11-24
 
 ---
@@ -159,6 +159,24 @@
   - Extracted `WordTransitionHelper.ts` to keep `GameplaySessionEngine.ts` strictly within the 200-line hard limit (197 lines) and max 150-line class size.
   - Added configurable user preferences in `PreGameLobby.vue` and `ScoreBar.vue` (`🛡️ Anti-Chatter`).
   - Added comprehensive unit tests in `gameplay.test.ts` and `session-engine.test.ts` (39 core passing tests). All 101 files verified clean by Biome.
+
+### Phase 9: Catalogue Export/Import, In-App YouTube Search & Mobile Virtual Keyboard UX (Commit pending)
+- [x] **Catalogue Export & Import:**
+  - Added `exportAll()` and `upsert()` methods in `ISongRepository` and `SqliteSongRepository` (185 lines).
+  - Added `exportCatalogue()` and `importCatalogue()` methods in `SongService.ts` with validation using `SongDetailDtoSchema`.
+  - Implemented `GET /api/songs/export` and `POST /api/songs/import` in `songs.controller.ts` with comprehensive unit tests in `api.test.ts`.
+  - Created Tier 1 presentational `SongCard.vue` (57 lines) and updated `SongCatalogContainer.vue` (173 lines) with Export JSON and Import JSON buttons with user-friendly notice banners.
+- [x] **In-App YouTube Search:**
+  - Created `YouTubeSearchScraper.ts` (73 lines) to search YouTube videos directly from `ytInitialData` with zero API key requirement, returning video IDs, titles, channel names, duration, and thumbnails.
+  - Wired into `IYouTubeGateway.ts`, `YouTubeGateway.ts`, and added `GET /api/youtube/search` in `youtube.controller.ts`.
+  - Created `YouTubeVideoSelector.vue` (179 lines) in Studio with tab switcher between "Search YouTube" and "Paste Link / ID", responsive cards, and accessible touch targets.
+- [x] **Mobile Responsiveness & Virtual Keyboard Handling:**
+  - Added `interactive-widget=resizes-content` and `viewport-fit=cover` in `apps/web/nuxt.config.ts`.
+  - Created `useVirtualKeyboard.ts` composable (43 lines) tracking `visualViewport` height changes and exposing `isKeyboardOpen`, `keyboardHeight`, and `dismissKeyboard()`.
+  - Updated `GameplayContainer.vue` with dynamic keyboard lift padding and mobile "Hide Keyboard" floating toolbar button.
+  - Added `handleFocus` smooth scroll in `WriteInput.vue` to ensure active input is never obscured by virtual keyboards on mobile devices (360px-430px).
+  - Adhered strictly to `antislop-ui` design rules: no generic gradients, no glowing orbs, high contrast, clean typography, min 44px touch targets.
+  - Verified 0 Biome errors across 105 files and 52 passing monorepo unit tests.
 
 ---
 

@@ -1,9 +1,12 @@
-import type {
-  CreateSongDto,
-  SongCreatedResponseDto,
-  SongDetailDto,
-  SongSummaryDto,
-  UpdateSongDto,
+import {
+  type CatalogueExportDto,
+  type CatalogueImportResultDto,
+  type CreateSongDto,
+  type SongCreatedResponseDto,
+  type SongDetailDto,
+  SongDetailDtoSchema,
+  type SongSummaryDto,
+  type UpdateSongDto,
 } from "@yourstruly/contracts";
 import type { ISongRepository } from "@yourstruly/db";
 import { TokenHashService } from "./TokenHashService";
@@ -68,5 +71,40 @@ export class SongService {
     }
 
     return this.songRepo.delete(id);
+  }
+
+  public async exportCatalogue(): Promise<CatalogueExportDto> {
+    const songs = await this.songRepo.exportAll();
+    return {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      songs,
+    };
+  }
+
+  public async importCatalogue(payload: unknown): Promise<CatalogueImportResultDto> {
+    const rawList = Array.isArray(payload) ? payload : (payload as { songs?: unknown[] })?.songs;
+    if (!Array.isArray(rawList)) {
+      throw new Error("Expected an array of songs or { songs: [...] }");
+    }
+
+    let importedCount = 0;
+    let skippedCount = 0;
+    const errors: string[] = [];
+
+    for (const item of rawList) {
+      const parsed = SongDetailDtoSchema.safeParse(item);
+      if (!parsed.success) {
+        errors.push(`Validation failed for ${(item as { title?: string })?.title ?? "item"}`);
+        skippedCount++;
+        continue;
+      }
+      const token = this.tokenService.generateToken();
+      const hash = this.tokenService.hashToken(token);
+      await this.songRepo.upsert(parsed.data, hash);
+      importedCount++;
+    }
+
+    return { importedCount, skippedCount, errors };
   }
 }

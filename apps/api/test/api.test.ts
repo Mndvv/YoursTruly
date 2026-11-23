@@ -132,4 +132,39 @@ describe("Elysia API Integration Tests", () => {
     const getRes = await app.handle(new Request(`http://localhost/api/songs/${song.id}`));
     expect(getRes.status).toBe(404);
   });
+
+  it("GET /api/songs/export and POST /api/songs/import handles full catalogue round-trip", async () => {
+    // 1. Create a song to export
+    await app.handle(
+      new Request("http://localhost/api/songs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...sampleSong, title: "Export Test Song" }),
+      }),
+    );
+
+    // 2. Export catalogue
+    const exportRes = await app.handle(new Request("http://localhost/api/songs/export"));
+    expect(exportRes.status).toBe(200);
+    const exported = (await exportRes.json()) as { version: number; songs: unknown[] };
+    expect(exported.version).toBe(1);
+    expect(Array.isArray(exported.songs)).toBe(true);
+    expect(exported.songs.length).toBeGreaterThanOrEqual(1);
+
+    // 3. Import catalogue
+    const importRes = await app.handle(
+      new Request("http://localhost/api/songs/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(exported),
+      }),
+    );
+    expect(importRes.status).toBe(200);
+    const importResult = (await importRes.json()) as {
+      importedCount: number;
+      skippedCount: number;
+    };
+    expect(importResult.importedCount).toBeGreaterThanOrEqual(1);
+    expect(importResult.skippedCount).toBe(0);
+  });
 });

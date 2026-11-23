@@ -10,3 +10,12 @@ export const YouTubeMetadataDtoSchema = z.object({
   parsedTitle: z.string().optional(),
 });
 export type YouTubeMetadataDto = z.infer<typeof YouTubeMetadataDtoSchema>;
+
+export const YouTubeSearchResultDtoSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  channel: z.string(),
+  duration: z.string().optional(),
+  thumbnailUrl: z.string(),
+});
+export type YouTubeSearchResultDto = z.infer<typeof YouTubeSearchResultDtoSchema>;
