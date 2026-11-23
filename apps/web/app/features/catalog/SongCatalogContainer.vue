@@ -7,6 +7,7 @@ const config = useRuntimeConfig();
 const songs = ref<SongSummaryDto[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+const isDeletingId = ref<string | null>(null);
 
 async function loadSongs() {
   isLoading.value = true;
@@ -19,6 +20,39 @@ async function loadSongs() {
     error.value = err instanceof Error ? err.message : "Error loading songs";
   } finally {
     isLoading.value = false;
+  }
+}
+
+async function onDeleteSong(songId: string, songTitle: string) {
+  if (typeof window !== "undefined" && !window.confirm(`Delete "${songTitle}"?`)) return;
+
+  isDeletingId.value = songId;
+  try {
+    const editToken =
+      typeof window !== "undefined"
+        ? localStorage.getItem(`yourstruly:editToken:${songId}`) || ""
+        : "";
+
+    const res = await fetch(`${config.public.apiBase}/api/songs/${songId}`, {
+      method: "DELETE",
+      headers: editToken ? { "x-edit-token": editToken } : {},
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Failed to delete track");
+    }
+
+    songs.value = songs.value.filter((s) => s.id !== songId);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(`yourstruly:editToken:${songId}`);
+    }
+  } catch (err: unknown) {
+    if (typeof window !== "undefined") {
+      window.alert(err instanceof Error ? err.message : "Failed to delete track");
+    }
+  } finally {
+    isDeletingId.value = null;
   }
 }
 
@@ -83,9 +117,20 @@ onMounted(() => loadSongs());
 
           <div class="flex items-center justify-between pt-3 border-t border-gray-800/80">
             <span class="text-xs text-gray-500 font-mono">▶ {{ song.playCount }} plays</span>
-            <NuxtLink :to="`/game/${song.id}`">
-              <AppButton size="sm" variant="primary">Play</AppButton>
-            </NuxtLink>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                :disabled="isDeletingId === song.id"
+                title="Delete track"
+                class="text-xs text-gray-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-950/40 transition disabled:opacity-50"
+                @click.stop="onDeleteSong(song.id, song.title)"
+              >
+                {{ isDeletingId === song.id ? "⏳" : "🗑️" }}
+              </button>
+              <NuxtLink :to="`/game/${song.id}`">
+                <AppButton size="sm" variant="primary">Play</AppButton>
+              </NuxtLink>
+            </div>
           </div>
         </div>
       </div>

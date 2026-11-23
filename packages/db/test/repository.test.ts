@@ -71,4 +71,13 @@ describe("SqliteSongRepository", () => {
     const fetched = await repo.findById(id);
     expect(fetched?.playCount).toBe(2);
   });
+
+  it("deletes a song and its revisions", async () => {
+    const { id } = await repo.create(sampleDto, "hash-delete");
+    expect(await repo.findById(id)).not.toBeNull();
+
+    const deleted = await repo.delete(id);
+    expect(deleted).toBe(true);
+    expect(await repo.findById(id)).toBeNull();
+  });
 });

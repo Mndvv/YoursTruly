@@ -99,4 +99,37 @@ describe("Elysia API Integration Tests", () => {
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("DELETE /api/songs/:id deletes song", async () => {
+    const createRes = await app.handle(
+      new Request("http://localhost/api/songs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sampleSong),
+      }),
+    );
+    const { song, editToken } = (await createRes.json()) as {
+      song: { id: string };
+      editToken: string;
+    };
+
+    const badDelete = await app.handle(
+      new Request(`http://localhost/api/songs/${song.id}`, {
+        method: "DELETE",
+        headers: { "x-edit-token": "wrong" },
+      }),
+    );
+    expect(badDelete.status).toBe(401);
+
+    const goodDelete = await app.handle(
+      new Request(`http://localhost/api/songs/${song.id}`, {
+        method: "DELETE",
+        headers: { "x-edit-token": editToken },
+      }),
+    );
+    expect(goodDelete.status).toBe(200);
+
+    const getRes = await app.handle(new Request(`http://localhost/api/songs/${song.id}`));
+    expect(getRes.status).toBe(404);
+  });
 });

@@ -20,8 +20,7 @@ export class SqliteSongRepository implements ISongRepository {
 
   public async findById(id: string): Promise<SongDetailDto | null> {
     const rows = this.db.select().from(songsTable).where(eq(songsTable.id, id)).all();
-    if (rows.length === 0) return null;
-    return this.mapToDetailDto(rows[0]);
+    return rows.length > 0 ? this.mapToDetailDto(rows[0]) : null;
   }
 
   public async findAll(limit = 50, offset = 0): Promise<SongSummaryDto[]> {
@@ -120,6 +119,12 @@ export class SqliteSongRepository implements ISongRepository {
     return rows[0]?.hash ?? null;
   }
 
+  public async delete(id: string): Promise<boolean> {
+    this.db.delete(songRevisionsTable).where(eq(songRevisionsTable.songId, id)).run();
+    const res = this.db.delete(songsTable).where(eq(songsTable.id, id)).run();
+    return Number(res.changes) > 0;
+  }
+
   private mapToSummaryDto(row: SongRow): SongSummaryDto {
     return {
       id: row.id,
@@ -134,13 +139,12 @@ export class SqliteSongRepository implements ISongRepository {
   }
 
   private mapToDetailDto(row: SongRow): SongDetailDto {
-    const lyricsData: LyricsData = JSON.parse(row.lyricsDataJson);
     return {
       ...this.mapToSummaryDto(row),
       videoStartMs: row.videoStartMs,
       videoEndMs: row.videoEndMs,
       globalOffsetMs: row.globalOffsetMs,
-      lyricsData,
+      lyricsData: JSON.parse(row.lyricsDataJson),
     };
   }
 }

@@ -74,5 +74,20 @@ export function createSongsController(
     .post("/:id/play", async ({ params }) => {
       await songService.recordPlay(params.id);
       return { success: true };
+    })
+    .delete("/:id", async ({ params, set, headers }) => {
+      const editToken = (headers["x-edit-token"] as string | undefined) || undefined;
+      try {
+        const success = await songService.deleteSong(params.id, editToken);
+        if (!success) {
+          set.status = 404;
+          return { error: "Song not found or already deleted" };
+        }
+        return { success: true };
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Deletion failed";
+        set.status = msg.includes("Unauthorized") ? 401 : 400;
+        return { error: msg };
+      }
     });
 }

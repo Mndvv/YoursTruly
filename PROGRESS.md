@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Gameplay Gap Generation Fix & Studio Sync UX Enhancements [COMPLETE]
-- **Active Task:** Complete! Verified with 39 passing tests and 0 Biome lint errors across 93 files.
+- **Current Phase:** Pre-Game Lobby, In-Game Missing Blank Masking, and Track Deletion [COMPLETE]
+- **Active Task:** Complete! Verified with 41 passing tests and 0 Biome lint errors across 94 files.
 - **Last Updated:** 2026-11-23
 
 ---
@@ -87,6 +87,15 @@
 - [x] Add Live Lyrics Sync Preview under YouTube player during Studio sync playback
 - [x] Add `TrackAlignmentControl` component with "Align all lyrics to current time" and ±1s / ±5s track shifting
 - [x] Extract `LyricCandidatePicker` presentational component to keep `SyncStudioContainer` < 180 lines
+- [x] Create `PreGameLobby.vue` setup screen to choose Mode (Write vs Choice), Difficulty (Beginner 10%, Intermediate 25%, Advanced 50%, Expert 100%), and Auto-Pause before starting playback
+- [x] Mask unsolved gaps in `LyricDisplay.vue` with interactive pulsing dashed blanks `✏️ _ _ _ _`
+- [x] Highlight solved gaps in emerald green upon correct answer
+- [x] Wire YouTube player pause/play and auto-pause pause/resume upon answering
+- [x] Add Replay Line (`Tab` / button) to seek back to start of current line when stuck
+- [x] Add `delete(id)` to `ISongRepository` & `SqliteSongRepository`
+- [x] Add `deleteSong(id, editToken)` to `SongService`
+- [x] Add `DELETE /api/songs/:id` route to `songs.controller.ts`
+- [x] Add track deletion button `🗑️` on song cards in `SongCatalogContainer.vue`
 
 ---
 
@@ -103,22 +112,25 @@
 9. **Domain Model Factory Methods:** `WordToken.fromData`, `LyricLine.fromData`, `SongLyrics.fromData` bridge serialized JSON DTOs and pure OOP entities without class type mismatches.
 10. **`LyricTimingShifter` Full-Track Alignment:** Allows shifting an entire track to compensate for video MV intros while maintaining exact word/line intervals.
 11. **Studio Live Sync Preview:** Uses `SyncClockEngine` to drive live `<LyricDisplay>` in real time during video playback in the Studio so author can visually verify sync accuracy before publishing.
+12. **Pre-Game Lobby Gate:** Song gameplay is gated behind mode and difficulty selection instead of instantly starting playback blindly.
+13. **In-Game Visual Gap Masking:** `LyricDisplay` actively masks missing words in the lyrics using dashed blanks proportional to the target word length, rendering solved words in emerald and active gaps with an animated amber focus.
+14. **Direct Track Deletion with Edit Token:** Songs can be deleted via `DELETE /api/songs/:id` with optional edit token verification, integrated directly into the Song Catalog with confirmation prompts.
 
 ---
 
 ## Known Issues / Blockers
 
-- None. All 39 unit & integration tests passing. Biome check passing with 0 errors across 93 files.
+- None. All 41 unit & integration tests passing. Biome check passing with 0 errors across 94 files.
 
 ---
 
 ## Exact Next Step
 
 1. Launch `bun run dev` (API on port 4000, Web on port 3000).
-2. Open `http://localhost:3000/studio` and test:
-   - Live lyric preview highlighting active words while the YouTube video plays.
-   - Whole-track "Align all lyrics to current time" button to skip MV intros.
-3. Open `http://localhost:3000/game/:id` and verify gameplay launches with write & choice modes without `TypeError`.
+2. Open `http://localhost:3000` and test:
+   - Track deletion via `🗑️` on any catalog card.
+   - Click "Play" on a song -> verify Pre-Game Lobby lets you choose Mode (Choice / Write) & Difficulty (Beginner 10% to Expert 100%) before starting.
+   - Start Game -> verify words are properly blanked out (`_ _ _ _`), input / choice buttons work, auto-pause stops at missing words, and answering resumes playback.
 
 ## Exact Next Step
 

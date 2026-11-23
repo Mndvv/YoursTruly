@@ -53,4 +53,20 @@ export class SongService {
   public async recordPlay(id: string): Promise<void> {
     await this.songRepo.incrementPlayCount(id);
   }
+
+  public async deleteSong(id: string, editToken?: string): Promise<boolean> {
+    const expectedHash = await this.songRepo.getEditTokenHash(id);
+    if (!expectedHash) {
+      throw new Error("Song not found");
+    }
+
+    if (editToken) {
+      const isValid = this.tokenService.verifyToken(editToken, expectedHash);
+      if (!isValid) {
+        throw new Error("Unauthorized: Invalid edit token");
+      }
+    }
+
+    return this.songRepo.delete(id);
+  }
 }

@@ -6,11 +6,15 @@ interface Props {
   startMs?: number;
   endMs?: number | null;
   playbackRate?: number;
+  isPaused?: boolean;
+  autoplay?: boolean;
 }
 
 interface YTPlayer {
   getCurrentTime?: () => number;
   pauseVideo?: () => void;
+  playVideo?: () => void;
+  seekTo?: (seconds: number, allowSeekAhead?: boolean) => void;
   destroy?: () => void;
   setPlaybackRate?: (rate: number) => void;
 }
@@ -19,6 +23,8 @@ const props = withDefaults(defineProps<Props>(), {
   startMs: 0,
   endMs: null,
   playbackRate: 1.0,
+  isPaused: false,
+  autoplay: false,
 });
 
 const emit = defineEmits<{
@@ -67,7 +73,7 @@ function createPlayerInstance() {
   player = new YT.Player(containerId, {
     videoId: props.videoId,
     playerVars: {
-      autoplay: 0,
+      autoplay: props.autoplay ? 1 : 0,
       controls: 1,
       rel: 0,
       start: Math.floor(props.startMs / 1000),
@@ -82,6 +88,32 @@ function createPlayerInstance() {
   });
   animFrame = requestAnimationFrame(pollTime);
 }
+
+function pause() {
+  if (player && typeof player.pauseVideo === "function") player.pauseVideo();
+}
+
+function play() {
+  if (player && typeof player.playVideo === "function") player.playVideo();
+}
+
+function seekTo(seconds: number) {
+  if (player && typeof player.seekTo === "function") player.seekTo(seconds, true);
+}
+
+defineExpose({
+  pause,
+  play,
+  seekTo,
+});
+
+watch(
+  () => props.isPaused,
+  (paused) => {
+    if (paused) pause();
+    else play();
+  },
+);
 
 watch(
   () => props.playbackRate,

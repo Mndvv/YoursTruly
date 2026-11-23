@@ -5,12 +5,32 @@ interface Props {
   activeLine: LyricLineData | null;
   activeWordId?: string | null;
   showTransliteration?: boolean;
+  gapIds?: Set<string>;
+  solvedGapIds?: Set<string>;
+  isGameActive?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   activeWordId: null,
   showTransliteration: true,
+  gapIds: () => new Set<string>(),
+  solvedGapIds: () => new Set<string>(),
+  isGameActive: false,
 });
+
+function isGapWord(wordId: string): boolean {
+  return props.isGameActive && props.gapIds.has(wordId);
+}
+
+function isSolvedWord(wordId: string): boolean {
+  return props.isGameActive && props.solvedGapIds.has(wordId);
+}
+
+function formatBlank(text: string): string {
+  const clean = text.replace(/[^a-zA-Z0-9]/g, "");
+  const len = Math.max(3, Math.min(8, clean.length || text.length));
+  return "_ ".repeat(len).trim();
+}
 </script>
 
 <template>
@@ -23,19 +43,47 @@ withDefaults(defineProps<Props>(), {
         {{ activeLine.transliteration }}
       </p>
 
-      <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-lg sm:text-2xl font-bold">
-        <span
-          v-for="word in activeLine.words"
-          :key="word.id"
-          class="transition-colors duration-150 rounded px-1"
-          :class="[
-            word.id === activeWordId
-              ? 'text-yellow-300 bg-yellow-950/60 scale-105 shadow-sm'
-              : 'text-gray-200'
-          ]"
-        >
-          {{ word.text }}
-        </span>
+      <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 text-lg sm:text-2xl font-bold">
+        <template v-for="word in activeLine.words" :key="word.id">
+          <!-- 1. Solved Gap Word -->
+          <span
+            v-if="isGapWord(word.id) && isSolvedWord(word.id)"
+            class="text-emerald-400 font-extrabold bg-emerald-950/70 border border-emerald-600/70 rounded-lg px-2 py-0.5 shadow-sm transition-all"
+            :class="{ 'scale-105 ring-2 ring-emerald-500/50': word.id === activeWordId }"
+          >
+            {{ word.text }}
+          </span>
+
+          <!-- 2. Unsolved Active Gap (Fill this now!) -->
+          <span
+            v-else-if="isGapWord(word.id) && word.id === activeWordId"
+            class="font-mono text-base sm:text-xl font-bold text-amber-300 bg-amber-950/80 border-2 border-dashed border-amber-400 rounded-lg px-3 py-0.5 shadow-lg animate-pulse inline-flex items-center gap-1"
+          >
+            <span class="text-xs text-amber-400 select-none">✏️</span>
+            <span>{{ formatBlank(word.text) }}</span>
+          </span>
+
+          <!-- 3. Unsolved Inactive Gap in current line -->
+          <span
+            v-else-if="isGapWord(word.id)"
+            class="font-mono text-xs sm:text-sm text-gray-400 bg-gray-800/90 border border-dashed border-gray-600 rounded px-2 py-0.5 select-none"
+          >
+            {{ formatBlank(word.text) }}
+          </span>
+
+          <!-- 4. Regular Non-Gap Word -->
+          <span
+            v-else
+            class="transition-colors duration-150 rounded px-1"
+            :class="[
+              word.id === activeWordId
+                ? 'text-yellow-300 bg-yellow-950/60 scale-105 shadow-sm'
+                : 'text-gray-200'
+            ]"
+          >
+            {{ word.text }}
+          </span>
+        </template>
       </div>
     </template>
 

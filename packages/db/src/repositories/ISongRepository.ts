@@ -12,4 +12,5 @@ export interface ISongRepository {
   update(id: string, data: UpdateSongDto): Promise<SongDetailDto>;
   incrementPlayCount(id: string): Promise<void>;
   getEditTokenHash(id: string): Promise<string | null>;
+  delete(id: string): Promise<boolean>;
 }
