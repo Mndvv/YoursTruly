@@ -92,7 +92,7 @@
 - [x] Add Replay Line (`Tab` / button) to seek back to start of current line when stuck
 - [x] Add track deletion button `🗑️` on song cards in `SongCatalogContainer.vue`
 
-### Phase 5: LingoClip Style Playback, Verse Rewind, Word Suggestions & Scorer
+### Phase 5: LingoClip Style Playback, Verse Rewind, Word Suggestions & Scorer (Commit `2be781e`)
 - [x] **AutoPauseController Pause Modes:**
   - Added `PauseMode = "strict" | "verse_loop" | "continuous"`.
   - Fixed pause timing window: `currentTimeMs >= endMs - 60` ensures pause is never skipped due to frame-rate intervals.
