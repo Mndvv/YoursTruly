@@ -19,6 +19,9 @@ export * from "./sync/OffsetCalculator";
 export * from "./sync/LyricTimingShifter";
 
 // Gameplay
+export * from "./gameplay/ActiveGapResolver";
+export * from "./gameplay/VerseLoopManager";
+export * from "./gameplay/GameplaySessionEngine";
 export * from "./gameplay/GapGenerator";
 export * from "./gameplay/AnswerValidator";
 export * from "./gameplay/AutoPauseController";

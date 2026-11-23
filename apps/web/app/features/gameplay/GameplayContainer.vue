@@ -14,18 +14,22 @@ import { useGameplaySession } from "../../composables/useGameplaySession";
 interface Props {
   song: SongDetailDto;
 }
-
 const props = defineProps<Props>();
 const game = useGameplaySession(props.song);
 
 const isGameStarted = ref(false);
 const isPaused = ref(false);
-const rewindNotice = ref(false);
-const playerRef = ref<{
-  pause: () => void;
-  play: () => void;
-  seekTo: (sec: number) => void;
-} | null>(null);
+const bannerNotice = ref<string | null>(null);
+const playerRef = ref<{ pause: () => void; play: () => void; seekTo: (s: number) => void } | null>(
+  null,
+);
+
+function showBanner(msg: string, ms = 2200) {
+  bannerNotice.value = msg;
+  setTimeout(() => {
+    bannerNotice.value = null;
+  }, ms);
+}
 
 function onStartGame(config: {
   mode: "write" | "choice";
@@ -48,23 +52,22 @@ function onTimeUpdate(timeMs: number) {
     },
     onRewindVerse: (toMs: number) => {
       playerRef.value?.seekTo(toMs / 1000);
-      rewindNotice.value = true;
-      setTimeout(() => {
-        rewindNotice.value = false;
-      }, 2200);
+      showBanner("🔁 Verse Rewind: Rewinding line so you can retry missed lyrics!");
+    },
+    onSkipVerse: () => {
+      showBanner("⏭️ Verse Skipped: Max retries reached, continuing song!", 2500);
     },
   });
 }
 
 function cyclePauseMode() {
   const modes: PauseMode[] = ["verse_loop", "strict", "continuous"];
-  const nextIdx = (modes.indexOf(game.pauseMode.value) + 1) % modes.length;
-  game.pauseMode.value = modes[nextIdx];
+  game.pauseMode.value = modes[(modes.indexOf(game.pauseMode.value) + 1) % modes.length];
 }
 
 function handleWriteSubmit() {
   const solved = game.submitAnswer();
-  if (solved && isPaused.value) {
+  if (solved && isPaused.value && !game.activeWord.value) {
     isPaused.value = false;
     playerRef.value?.play();
   }
@@ -72,7 +75,7 @@ function handleWriteSubmit() {
 
 function handleChoiceSelect(choice: string) {
   const solved = game.selectChoice(choice);
-  if (solved && isPaused.value) {
+  if (solved && isPaused.value && !game.activeWord.value) {
     isPaused.value = false;
     playerRef.value?.play();
   }
@@ -89,7 +92,6 @@ function replayCurrentLine() {
 </script>
 
 <template>
-  <!-- 1. Pre-Game Lobby -->
   <PreGameLobby
     v-if="!isGameStarted"
     :song="song"
@@ -99,7 +101,6 @@ function replayCurrentLine() {
     @start="onStartGame"
   />
 
-  <!-- 2. Active Game Arena -->
   <div v-else class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4">
     <div class="flex items-center justify-between">
       <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium">
@@ -114,7 +115,7 @@ function replayCurrentLine() {
       </button>
     </div>
 
-    <!-- Sticky Video Player -->
+    <!-- Sticky Video Player (Scrubber & Controls Disabled for Gameplay) -->
     <div class="sticky top-14 z-20 bg-gray-950 pb-2">
       <YouTubePlayer
         ref="playerRef"
@@ -123,11 +124,12 @@ function replayCurrentLine() {
         :end-ms="song.videoEndMs"
         :is-paused="isPaused"
         :autoplay="true"
+        :show-controls="false"
+        :disable-scrubbing="true"
         @timeupdate="onTimeUpdate"
       />
     </div>
 
-    <!-- Score & Controls Bar -->
     <ScoreBar
       :score="game.score.value"
       :streak="game.streak.value"
@@ -140,15 +142,13 @@ function replayCurrentLine() {
       @change-mode="(m) => game.gameMode.value = m"
     />
 
-    <!-- Verse Rewind Notification -->
     <div
-      v-if="rewindNotice"
+      v-if="bannerNotice"
       class="bg-indigo-950/80 border border-indigo-500 rounded-xl px-4 py-2 text-center text-xs text-indigo-200 font-bold shadow-lg"
     >
-      🔁 Verse Rewind: Rewinding line so you can listen again and complete missed lyrics!
+      {{ bannerNotice }}
     </div>
 
-    <!-- Strict Pause Notification -->
     <div
       v-else-if="isPaused"
       class="bg-amber-950/80 border border-amber-600/80 rounded-xl px-4 py-2.5 text-center flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-lg animate-pulse"
@@ -161,7 +161,6 @@ function replayCurrentLine() {
       </AppButton>
     </div>
 
-    <!-- Active Line Highlight with missing word blanks & hints -->
     <LyricDisplay
       :active-line="game.activeLine.value"
       :active-word-id="game.activeWord.value?.id"
@@ -172,7 +171,6 @@ function replayCurrentLine() {
       :is-game-active="true"
     />
 
-    <!-- Input Interaction Area -->
     <div class="flex flex-col items-center justify-center py-2">
       <WriteInput
         v-if="game.gameMode.value === 'write'"

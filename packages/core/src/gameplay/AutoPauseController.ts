@@ -9,16 +9,28 @@ export interface AutoPauseTrigger {
   triggerTimeMs: number;
 }
 
+export interface VerseRewindCheck {
+  lineId: string;
+  lineStartMs: number | null;
+  lineEndMs: number | null;
+  unsolvedGapCount: number;
+  currentTimeMs: number;
+  maxRetries?: number;
+}
+
 export interface VerseRewindTrigger {
   lineId: string;
   rewindToMs: number;
   triggerTimeMs: number;
+  retryCount: number;
+  shouldSkipVerse: boolean;
 }
 
 export class AutoPauseController {
   private pauseMode: PauseMode;
   private readonly pausedWordIds: Set<string> = new Set();
-  private readonly rewoundLineIds: Set<string> = new Set();
+  private readonly verseRetryCounts: Map<string, number> = new Map();
+  private readonly rewoundLines: Set<string> = new Set();
 
   constructor(pauseMode: PauseMode = "verse_loop") {
     this.pauseMode = pauseMode;
@@ -48,50 +60,58 @@ export class AutoPauseController {
         : WordToken.fromData(activeWord as WordTokenData);
 
     const endMs = token.getEndMs();
-    if (endMs === null) return null;
-
     const wordId = token.getId();
-    if (this.pausedWordIds.has(wordId)) {
-      return null;
-    }
+    if (endMs === null || this.pausedWordIds.has(wordId)) return null;
 
-    // Trigger pause at the word boundary (with a 60ms tolerance window)
     if (currentTimeMs >= endMs - 60) {
       this.pausedWordIds.add(wordId);
-      return {
-        wordId,
-        wordText: token.getText(),
-        triggerTimeMs: currentTimeMs,
-      };
+      return { wordId, wordText: token.getText(), triggerTimeMs: currentTimeMs };
     }
 
     return null;
   }
 
-  public checkVerseRewind(
-    lineId: string,
-    lineStartMs: number | null,
-    lineEndMs: number | null,
-    unsolvedGapCount: number,
-    currentTimeMs: number,
-  ): VerseRewindTrigger | null {
-    if (this.pauseMode !== "verse_loop" || unsolvedGapCount === 0) {
+  public checkVerseRewind(check: VerseRewindCheck): VerseRewindTrigger | null {
+    const {
+      lineId,
+      lineStartMs,
+      lineEndMs,
+      unsolvedGapCount,
+      currentTimeMs,
+      maxRetries = 2,
+    } = check;
+    if (this.pauseMode !== "verse_loop" || unsolvedGapCount === 0) return null;
+    if (lineEndMs === null || lineStartMs === null) return null;
+
+    if (currentTimeMs < lineEndMs - 200) {
+      this.rewoundLines.delete(lineId);
       return null;
     }
-    if (lineEndMs === null || lineStartMs === null) return null;
-    if (this.rewoundLineIds.has(lineId)) return null;
+    if (currentTimeMs < lineEndMs - 80 || this.rewoundLines.has(lineId)) {
+      return null;
+    }
 
-    // Trigger rewind near the end of the line
-    if (currentTimeMs >= lineEndMs - 80) {
-      this.rewoundLineIds.add(lineId);
+    this.rewoundLines.add(lineId);
+    const currentRetries = this.verseRetryCounts.get(lineId) ?? 0;
+    if (currentRetries >= maxRetries) {
+      this.verseRetryCounts.delete(lineId);
       return {
         lineId,
         rewindToMs: lineStartMs,
         triggerTimeMs: currentTimeMs,
+        retryCount: currentRetries + 1,
+        shouldSkipVerse: true,
       };
     }
 
-    return null;
+    this.verseRetryCounts.set(lineId, currentRetries + 1);
+    return {
+      lineId,
+      rewindToMs: lineStartMs,
+      triggerTimeMs: currentTimeMs,
+      retryCount: currentRetries + 1,
+      shouldSkipVerse: false,
+    };
   }
 
   public markSolved(wordId: string): void {
@@ -99,11 +119,13 @@ export class AutoPauseController {
   }
 
   public markVerseCleared(lineId: string): void {
-    this.rewoundLineIds.delete(lineId);
+    this.verseRetryCounts.delete(lineId);
+    this.rewoundLines.delete(lineId);
   }
 
   public reset(): void {
     this.pausedWordIds.clear();
-    this.rewoundLineIds.clear();
+    this.verseRetryCounts.clear();
+    this.rewoundLines.clear();
   }
 }

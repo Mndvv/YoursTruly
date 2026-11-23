@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { WordToken } from "../src/domain/WordToken";
+import { ActiveGapResolver } from "../src/gameplay/ActiveGapResolver";
 import { AnswerValidator } from "../src/gameplay/AnswerValidator";
 import { AutoPauseController } from "../src/gameplay/AutoPauseController";
 import { ChoiceDistractorGenerator } from "../src/gameplay/ChoiceDistractorGenerator";
@@ -77,15 +78,97 @@ describe("Gameplay: AutoPauseController", () => {
     const controller = new AutoPauseController("verse_loop");
 
     // Before line end
-    expect(controller.checkVerseRewind("l1", 1000, 5000, 2, 4500)).toBeNull();
+    expect(
+      controller.checkVerseRewind({
+        lineId: "l1",
+        lineStartMs: 1000,
+        lineEndMs: 5000,
+        unsolvedGapCount: 2,
+        currentTimeMs: 4500,
+      }),
+    ).toBeNull();
 
-    // At line end boundary
-    const rewind = controller.checkVerseRewind("l1", 1000, 5000, 2, 4950);
-    expect(rewind).not.toBeNull();
-    expect(rewind?.rewindToMs).toBe(1000);
+    // At line end boundary: 1st rewind
+    const rewind1 = controller.checkVerseRewind({
+      lineId: "l1",
+      lineStartMs: 1000,
+      lineEndMs: 5000,
+      unsolvedGapCount: 2,
+      currentTimeMs: 4950,
+      maxRetries: 2,
+    });
+    expect(rewind1).not.toBeNull();
+    expect(rewind1?.rewindToMs).toBe(1000);
+    expect(rewind1?.shouldSkipVerse).toBe(false);
 
-    // No rewind if 0 unsolved gaps
-    expect(controller.checkVerseRewind("l2", 6000, 9000, 0, 8950)).toBeNull();
+    // Seeks back to verse start (re-arms trigger)
+    controller.checkVerseRewind({
+      lineId: "l1",
+      lineStartMs: 1000,
+      lineEndMs: 5000,
+      unsolvedGapCount: 2,
+      currentTimeMs: 1200,
+    });
+
+    // 2nd rewind at line end
+    const rewind2 = controller.checkVerseRewind({
+      lineId: "l1",
+      lineStartMs: 1000,
+      lineEndMs: 5000,
+      unsolvedGapCount: 2,
+      currentTimeMs: 4950,
+      maxRetries: 2,
+    });
+    expect(rewind2?.shouldSkipVerse).toBe(false);
+
+    // Seeks back again
+    controller.checkVerseRewind({
+      lineId: "l1",
+      lineStartMs: 1000,
+      lineEndMs: 5000,
+      unsolvedGapCount: 2,
+      currentTimeMs: 1200,
+    });
+
+    // 3rd trigger exceeds maxRetries (2) -> skips verse
+    const skip = controller.checkVerseRewind({
+      lineId: "l1",
+      lineStartMs: 1000,
+      lineEndMs: 5000,
+      unsolvedGapCount: 2,
+      currentTimeMs: 4950,
+      maxRetries: 2,
+    });
+    expect(skip?.shouldSkipVerse).toBe(true);
+  });
+});
+
+describe("Gameplay: ActiveGapResolver", () => {
+  const resolver = new ActiveGapResolver();
+  const line = {
+    id: "l1",
+    text: "look at the stars",
+    startMs: 1000,
+    endMs: 3000,
+    words: [
+      { id: "w1", text: "look", startMs: 1000, endMs: 1400 },
+      { id: "w2", text: "at", startMs: 1400, endMs: 1800 },
+      { id: "w3", text: "the", startMs: 1800, endMs: 2200 },
+      { id: "w4", text: "stars", startMs: 2200, endMs: 3000 },
+    ],
+  };
+  const gaps = new Set(["w1", "w4"]);
+
+  it("finds the first unsolved gap in the line", () => {
+    const isDone = (id: string) => id === "w1";
+    const target = resolver.findTargetGap(line, gaps, isDone);
+    expect(target?.id).toBe("w4");
+  });
+
+  it("returns all unsolved gaps in the line", () => {
+    const isDone = () => false;
+    const unsolved = resolver.getUnsolvedGaps(line, gaps, isDone);
+    expect(unsolved.map((w) => w.id)).toEqual(["w1", "w4"]);
   });
 });
 

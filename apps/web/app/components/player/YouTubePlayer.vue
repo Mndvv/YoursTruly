@@ -8,6 +8,8 @@ interface Props {
   playbackRate?: number;
   isPaused?: boolean;
   autoplay?: boolean;
+  showControls?: boolean;
+  disableScrubbing?: boolean;
 }
 
 interface YTPlayer {
@@ -25,6 +27,8 @@ const props = withDefaults(defineProps<Props>(), {
   playbackRate: 1.0,
   isPaused: false,
   autoplay: false,
+  showControls: true,
+  disableScrubbing: false,
 });
 
 const emit = defineEmits<{
@@ -74,7 +78,9 @@ function createPlayerInstance() {
     videoId: props.videoId,
     playerVars: {
       autoplay: props.autoplay ? 1 : 0,
-      controls: 1,
+      controls: props.showControls && !props.disableScrubbing ? 1 : 0,
+      disablekb: props.disableScrubbing ? 1 : 0,
+      fs: 0,
       rel: 0,
       start: Math.floor(props.startMs / 1000),
     },
@@ -132,5 +138,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative border border-gray-800">
     <div :id="containerId" class="w-full h-full" />
+    <div
+      v-if="disableScrubbing"
+      class="absolute inset-0 z-10 select-none bg-transparent cursor-default"
+      @click.stop.prevent
+      @mousedown.stop.prevent
+      @touchstart.stop.prevent
+      @pointerdown.stop.prevent
+    />
   </div>
 </template>

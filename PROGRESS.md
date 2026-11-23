@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** LingoClip Gameplay Polish: Reliable Pause/Rewind Modes, Verse Rewind, Word Help/Suggestions, and Success/Fail Typing Accuracy [COMPLETE]
-- **Active Task:** All requested features verified with 44 passing tests, 0 Biome lint errors across 96 files, and successful monorepo production builds. Ready for commit & testing in dev environment.
+- **Current Phase:** Gameplay Flow & LingoClip Mechanics Polish: Sequential Word Queue, Early Answering, Scrubbing Prevention, and Stale Verse Auto-Skip [COMPLETE]
+- **Active Task:** All features implemented, verified with 48 passing unit tests across 11 test files, 0 Biome errors across 100 files, and clean monorepo builds. Ready for commit.
 - **Last Updated:** 2026-11-23
 
 ---
@@ -118,32 +118,50 @@
   - Added unit tests in `packages/core/test/gameplay.test.ts` for strict pause, verse rewind, letter reveals, and 50/50 distractors (44 tests passing).
   - Biome check passing 0 errors across 96 files. Full monorepo build verified.
 
+### Phase 6: Sequential Word Queue, Early Answering, Scrubbing Prevention & Retry Limits
+- [x] **Disable YouTube Progress Slider & Scrubbing:**
+  - Added `:show-controls="false"` and `:disable-scrubbing="true"` to `YouTubePlayer.vue`.
+  - Configured `controls: 0`, `disablekb: 1`, and transparent pointer-events overlay so players cannot cheat or drag the scrubber.
+- [x] **Sequential Active Gap Queue & Early Answering:**
+  - Created `ActiveGapResolver.ts` (34 lines) to resolve target gap as the first unsolved gap in the verse.
+  - Users can type or select choices early before the word timestamp or complete the current verse without waiting.
+  - Even if missed, the gap remains active and typeable while the verse is playing.
+  - In Choice Mode, choices update immediately upon answering the previous word.
+- [x] **Stale Verse Auto-Skip & Consecutive Fail Protection:**
+  - Extracted `VerseLoopManager.ts` (34 lines) and updated `AutoPauseController.ts` (131 lines) to track verse retries.
+  - Automatically loops up to 2 times (3 total attempts). If still uncompleted, marks unsolved gaps as failed and continues the song with a skip banner.
+  - In Strict Mode, 3 consecutive failed attempts on a word auto-reveals it as failed and resumes playback.
+- [x] **Pure OOP Gameplay Engine Architecture:**
+  - Created `GameplaySessionEngine.ts` (194 lines, max class size 147 lines) to cleanly encapsulate gameplay state, reducing Vue composable complexity from 22 to 2.
+  - Added comprehensive unit tests in `packages/core/test/session-engine.test.ts` (48 total passing tests).
+  - Verified 0 Biome errors across 100 files and successful full monorepo build.
+
 ---
 
 ## Architectural Decisions & Deviations
 
 1. **Bun as Monorepo Package Manager:** Workspaces managed cleanly at root level (`apps/*`, `packages/*`).
 2. **Concurrent Dev Runner (`scripts/dev.ts`):** Spawns Elysia API (`port 4000`) and Nuxt 4 (`port 3000`) concurrently with unified stdout/stderr streaming.
-3. **Pure OOP in `packages/core`:** Zero framework dependencies. Business logic encapsulated in `AutoPauseController`, `WordHintHelper`, `GameplayScorer`, `GapGenerator`, `SyncClockEngine`.
+3. **Pure OOP in `packages/core`:** Zero framework dependencies. Domain logic encapsulated in `GameplaySessionEngine`, `ActiveGapResolver`, `VerseLoopManager`, `AutoPauseController`, `WordHintHelper`, `GameplayScorer`.
 4. **No Godmode Discipline:** Maximum 200 lines per file, 150 lines per class, 35 lines per method, 3 levels of nesting. No dumping grounds like `utils.ts`.
-5. **Frame-Safe Auto-Pause Window:** `effectiveMs >= endMs - 60` reliably catches word boundaries across any playback frame-rate (~16-50ms intervals).
-6. **LingoClip Verse Rewind Flow:** In `verse_loop` mode, the line plays continuously. When the line boundary is crossed with unsolved gaps, the playback rewinds to `line.startMs` so the learner can re-listen.
-7. **Progressive Hinting Penalty:** Using hints or failing words increments `failCount` and resets streaks, maintaining honest learning metrics.
+5. **Frame-Safe Auto-Pause Window & Re-Arming:** `effectiveMs >= endMs - 60` reliably catches word boundaries; verse rewind re-arms automatically once playback seeks back before `lineEndMs - 200`.
+6. **LingoClip Verse Loop Max Retries:** Limits rewind loops to 2 retries (3 passes) before auto-skipping so players are never trapped in infinite loops.
+7. **Immediate Choice Progression:** In Choice Mode, as soon as an answer is selected, choices for the next target gap are generated and rendered instantaneously.
 
 ---
 
 ## Known Issues / Blockers
 
-- None. All 44 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 96 files.
+- None. All 48 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 100 files.
 
 ---
 
 ## Exact Next Step
 
-1. Commit atomic unit: `feat(gameplay): add verse rewind loop, word hint suggestions, success/fail typing stats, and fix auto-pause window`.
+1. Commit atomic unit: `feat(gameplay): sequential gap queue, early answering, scrubbing prevention, and verse retry limit`.
 2. Launch `bun run dev` (API on port 4000, Web on port 3000).
 3. Test in browser:
-   - Select a song -> Pre-game lobby -> choose Mode (Write / Choice), Difficulty, and Pause Mode (Verse Loop, Strict, Continuous).
-   - Test `💡 Hint` button in Write Mode and `💡 50/50 Hint` in Choice Mode.
-   - Verify Verse Loop rewinds to line start when missing words at verse end, and Strict Pause halts at word boundary.
-   - Verify Passed, Failed, and Accuracy % update in real time.
+   - Scrubbing disabled: YouTube progress slider is completely hidden and cannot be dragged.
+   - Choice Mode: Choices update immediately when an answer is clicked without waiting for the next timestamp.
+   - Write Mode: You can type words in advance or finish the verse early; if missed, you can still type it in before the verse ends.
+   - Verse Loop Retry Limit: If verse remains uncompleted after 2-3 loops, it auto-skips with a banner notice and continues the song.
