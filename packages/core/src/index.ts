@@ -23,6 +23,8 @@ export * from "./gameplay/GapGenerator";
 export * from "./gameplay/AnswerValidator";
 export * from "./gameplay/AutoPauseController";
 export * from "./gameplay/ChoiceDistractorGenerator";
+export * from "./gameplay/WordHintHelper";
+export * from "./gameplay/GameplayScorer";
 
 // Transliteration
 export * from "./transliteration/ITransliterationProvider";

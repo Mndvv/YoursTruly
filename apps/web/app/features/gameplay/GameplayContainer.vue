@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SongDetailDto } from "@yourstruly/contracts";
-import type { DifficultyLevel } from "@yourstruly/core";
+import type { DifficultyLevel, PauseMode } from "@yourstruly/core";
 import { ref } from "vue";
 import ChoiceGrid from "../../components/game/ChoiceGrid.vue";
 import PreGameLobby from "../../components/game/PreGameLobby.vue";
@@ -20,6 +20,7 @@ const game = useGameplaySession(props.song);
 
 const isGameStarted = ref(false);
 const isPaused = ref(false);
+const rewindNotice = ref(false);
 const playerRef = ref<{
   pause: () => void;
   play: () => void;
@@ -29,21 +30,36 @@ const playerRef = ref<{
 function onStartGame(config: {
   mode: "write" | "choice";
   difficulty: DifficultyLevel;
-  autoPause: boolean;
+  pauseMode: PauseMode;
 }) {
   game.gameMode.value = config.mode;
   game.difficulty.value = config.difficulty;
-  game.autoPause.value = config.autoPause;
+  game.pauseMode.value = config.pauseMode;
   isGameStarted.value = true;
   isPaused.value = false;
 }
 
 function onTimeUpdate(timeMs: number) {
   if (!isGameStarted.value) return;
-  game.onPlaybackTick(timeMs, () => {
-    isPaused.value = true;
-    playerRef.value?.pause();
+  game.onPlaybackTick(timeMs, {
+    onAutoPause: () => {
+      isPaused.value = true;
+      playerRef.value?.pause();
+    },
+    onRewindVerse: (toMs: number) => {
+      playerRef.value?.seekTo(toMs / 1000);
+      rewindNotice.value = true;
+      setTimeout(() => {
+        rewindNotice.value = false;
+      }, 2200);
+    },
   });
+}
+
+function cyclePauseMode() {
+  const modes: PauseMode[] = ["verse_loop", "strict", "continuous"];
+  const nextIdx = (modes.indexOf(game.pauseMode.value) + 1) % modes.length;
+  game.pauseMode.value = modes[nextIdx];
 }
 
 function handleWriteSubmit() {
@@ -73,19 +89,18 @@ function replayCurrentLine() {
 </script>
 
 <template>
-  <!-- 1. Pre-Game Lobby: Choose mode & difficulty before starting -->
+  <!-- 1. Pre-Game Lobby -->
   <PreGameLobby
     v-if="!isGameStarted"
     :song="song"
     :initial-mode="game.gameMode.value"
     :initial-difficulty="game.difficulty.value"
-    :initial-auto-pause="game.autoPause.value"
+    :initial-pause-mode="game.pauseMode.value"
     @start="onStartGame"
   />
 
   <!-- 2. Active Game Arena -->
   <div v-else class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4">
-    <!-- Header Controls & Switch Mode -->
     <div class="flex items-center justify-between">
       <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium">
         ← Exit Game
@@ -99,7 +114,7 @@ function replayCurrentLine() {
       </button>
     </div>
 
-    <!-- Sticky compact video on mobile -->
+    <!-- Sticky Video Player -->
     <div class="sticky top-14 z-20 bg-gray-950 pb-2">
       <YouTubePlayer
         ref="playerRef"
@@ -117,31 +132,43 @@ function replayCurrentLine() {
       :score="game.score.value"
       :streak="game.streak.value"
       :difficulty="game.difficulty.value"
-      :auto-pause="game.autoPause.value"
+      :pause-mode="game.pauseMode.value"
       :game-mode="game.gameMode.value"
-      @toggle-auto-pause="game.autoPause.value = !game.autoPause.value"
+      :success-count="game.successCount.value"
+      :fail-count="game.failCount.value"
+      @cycle-pause-mode="cyclePauseMode"
       @change-mode="(m) => game.gameMode.value = m"
     />
 
-    <!-- Auto-Pause Notification Banner -->
+    <!-- Verse Rewind Notification -->
     <div
-      v-if="isPaused"
+      v-if="rewindNotice"
+      class="bg-indigo-950/80 border border-indigo-500 rounded-xl px-4 py-2 text-center text-xs text-indigo-200 font-bold shadow-lg"
+    >
+      🔁 Verse Rewind: Rewinding line so you can listen again and complete missed lyrics!
+    </div>
+
+    <!-- Strict Pause Notification -->
+    <div
+      v-else-if="isPaused"
       class="bg-amber-950/80 border border-amber-600/80 rounded-xl px-4 py-2.5 text-center flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-lg animate-pulse"
     >
       <span class="text-xs sm:text-sm text-amber-200 font-bold">
-        ⏸️ Paused at missing word! Enter the correct answer to continue.
+        ⏸️ Paused at missing word! Enter answer or click Hint to continue.
       </span>
       <AppButton size="sm" variant="secondary" @click="replayCurrentLine">
         🔄 Replay Line (Tab)
       </AppButton>
     </div>
 
-    <!-- Active Line Highlight with missing word blanks -->
+    <!-- Active Line Highlight with missing word blanks & hints -->
     <LyricDisplay
       :active-line="game.activeLine.value"
       :active-word-id="game.activeWord.value?.id"
       :gap-ids="game.gapIds.value"
       :solved-gap-ids="game.solvedGapIds.value"
+      :failed-gap-ids="game.failedGapIds.value"
+      :current-hint="game.currentHint.value"
       :is-game-active="true"
     />
 
@@ -150,13 +177,17 @@ function replayCurrentLine() {
       <WriteInput
         v-if="game.gameMode.value === 'write'"
         v-model="game.currentInput.value"
+        :has-error="game.inputHasError.value"
         @submit="handleWriteSubmit"
         @replay="replayCurrentLine"
+        @hint="game.giveHint"
       />
       <ChoiceGrid
         v-else
         :choices="game.activeChoices.value"
+        :wrong-choices="game.wrongChoices.value"
         @select="handleChoiceSelect"
+        @hint="game.giveHint"
       />
     </div>
   </div>

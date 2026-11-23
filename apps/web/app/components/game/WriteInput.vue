@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { ref } from "vue";
-
 interface Props {
   modelValue: string;
   placeholder?: string;
   disabled?: boolean;
+  hasError?: boolean;
 }
 
 withDefaults(defineProps<Props>(), {
   placeholder: "Type the missing word...",
   disabled: false,
+  hasError: false,
 });
 
 const emit = defineEmits<{
   (e: "update:modelValue", val: string): void;
   (e: "submit"): void;
   (e: "replay"): void;
+  (e: "hint"): void;
 }>();
 
 function handleKeyDown(event: KeyboardEvent) {
@@ -25,6 +26,9 @@ function handleKeyDown(event: KeyboardEvent) {
   } else if (event.key === "Tab") {
     event.preventDefault();
     emit("replay");
+  } else if (event.key === "Control" || event.key === "F1") {
+    event.preventDefault();
+    emit("hint");
   }
 }
 </script>
@@ -42,11 +46,28 @@ function handleKeyDown(event: KeyboardEvent) {
         autocorrect="off"
         autocapitalize="off"
         spellcheck="false"
-        class="w-full bg-gray-900 border-2 border-indigo-600/80 rounded-xl px-4 py-3 text-lg font-bold text-center text-white placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 transition shadow-lg"
+        class="w-full bg-gray-900 border-2 rounded-xl px-4 py-3 text-lg font-bold text-center text-white placeholder-gray-500 focus:outline-none transition shadow-lg"
+        :class="[
+          hasError
+            ? 'border-rose-500 ring-4 ring-rose-500/30'
+            : 'border-indigo-600/80 focus:ring-4 focus:ring-indigo-500/30'
+        ]"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @keydown="handleKeyDown"
       />
     </div>
+
+    <!-- Hint Button -->
+    <button
+      type="button"
+      title="Give Letter Hint (Shortcut: Ctrl or F1)"
+      class="px-3 py-3 rounded-xl bg-amber-950/40 hover:bg-amber-950/80 text-amber-300 border border-amber-700/60 text-xs font-mono font-bold flex items-center gap-1 transition"
+      @click="$emit('hint')"
+    >
+      💡 Hint
+    </button>
+
+    <!-- Replay Line Button -->
     <button
       type="button"
       title="Replay Line (Shortcut: Tab)"

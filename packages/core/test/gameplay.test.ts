@@ -4,6 +4,7 @@ import { AnswerValidator } from "../src/gameplay/AnswerValidator";
 import { AutoPauseController } from "../src/gameplay/AutoPauseController";
 import { ChoiceDistractorGenerator } from "../src/gameplay/ChoiceDistractorGenerator";
 import { GapGenerator } from "../src/gameplay/GapGenerator";
+import { WordHintHelper } from "../src/gameplay/WordHintHelper";
 
 describe("Gameplay: AnswerValidator", () => {
   const validator = new AnswerValidator();
@@ -56,20 +57,53 @@ describe("Gameplay: GapGenerator", () => {
 });
 
 describe("Gameplay: AutoPauseController", () => {
-  it("triggers pause at endMs boundary of unsolved gap word", () => {
-    const controller = new AutoPauseController(true);
+  it("triggers strict pause at end boundary of unsolved gap word", () => {
+    const controller = new AutoPauseController("strict");
     const word = new WordToken({ id: "w1", text: "stars", startMs: 1000, endMs: 1500 });
 
     // Playing before boundary
-    expect(controller.checkAutoPause(word, true, false, 1200)).toBeNull();
+    expect(controller.checkWordAutoPause(word, true, false, 1200)).toBeNull();
 
-    // Reached boundary
-    const trigger = controller.checkAutoPause(word, true, false, 1500);
+    // Reached boundary window (1500 - 60 = 1440)
+    const trigger = controller.checkWordAutoPause(word, true, false, 1450);
     expect(trigger).not.toBeNull();
     expect(trigger?.wordId).toBe("w1");
 
     // Does not trigger repeatedly
-    expect(controller.checkAutoPause(word, true, false, 1510)).toBeNull();
+    expect(controller.checkWordAutoPause(word, true, false, 1510)).toBeNull();
+  });
+
+  it("triggers verse rewind in verse_loop mode when line ends with unsolved gaps", () => {
+    const controller = new AutoPauseController("verse_loop");
+
+    // Before line end
+    expect(controller.checkVerseRewind("l1", 1000, 5000, 2, 4500)).toBeNull();
+
+    // At line end boundary
+    const rewind = controller.checkVerseRewind("l1", 1000, 5000, 2, 4950);
+    expect(rewind).not.toBeNull();
+    expect(rewind?.rewindToMs).toBe(1000);
+
+    // No rewind if 0 unsolved gaps
+    expect(controller.checkVerseRewind("l2", 6000, 9000, 0, 8950)).toBeNull();
+  });
+});
+
+describe("Gameplay: WordHintHelper", () => {
+  const helper = new WordHintHelper();
+
+  it("progressively reveals letters in hint levels", () => {
+    expect(helper.getLetterHint("hello", 0)).toBe("_ _ _ _ _");
+    expect(helper.getLetterHint("hello", 1)).toBe("h _ _ _ _");
+    expect(helper.getLetterHint("hello", 3)).toBe("h e l _ _");
+    expect(helper.getLetterHint("hello", 5)).toBe("h e l l o");
+  });
+
+  it("eliminates distractors for 50/50 choice hint", () => {
+    const choices = ["stars", "moon", "sun", "sky"];
+    const hintChoices = helper.get5050Choices("stars", choices);
+    expect(hintChoices.length).toBe(2);
+    expect(hintChoices).toContain("stars");
   });
 });
 
