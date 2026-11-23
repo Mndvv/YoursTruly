@@ -28,8 +28,10 @@ Before scaffolding packages or writing feature code, the AI agent **MUST** compl
 5. **Create `PROGRESS.md`:** Create a single source-of-truth progress tracker in the root directory.
 6. **Initial Commit:** Commit these bootstrap files as the very first commit (`chore: bootstrap project docs, agent guidelines, and progress tracker`).
 
-### 2.2. Single-File Progress Tracking (`PROGRESS.md`)
-All development progress **MUST** be maintained in a single file: `PROGRESS.md`. After every completed task or milestone, update `PROGRESS.md` with:
+### 2.2. Real-Time Single-File Progress Tracking (`PROGRESS.md`)
+All development progress **MUST** be maintained in real time in a single file: `PROGRESS.md`.
+**Crucial Rule:** Update `PROGRESS.md` immediately *before* starting any atomic unit (marking it in-progress) and immediately *after* verifying it (marking it done). **Never delay updating until the end of a session or milestone**, ensuring that if token or context limits are reached mid-run, the exact active state and resume point are already persisted on disk.
+Always keep updated:
 * **Current Phase & Active Task**
 * **Completed Checklist** (with brief notes and commit hashes)
 * **Architectural Decisions / Deviations** (if any)

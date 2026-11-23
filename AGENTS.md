@@ -7,7 +7,7 @@ This document governs the engineering standards, code hygiene, and continuity pr
 ## 1. Core Operating Principles
 
 1. **Check Local Lyrica Documentation First:** Before writing or changing any Lyrica API call or normalizer, read `lyrica-docs/`. Never hallucinate query parameters or payload schemas.
-2. **Single Source of Truth for Progress:** Maintain `PROGRESS.md` after every atomic task or milestone.
+2. **Strict Real-Time Progress Logging:** Update `PROGRESS.md` immediately *before* beginning a task (marking it in-progress) and immediately *after* completing it (marking it done). NEVER wait until the end of a session or milestone to update progress, in case tokens run out mid-flight.
 3. **Commit Every Atomic Unit:** Commit immediately after running tests/typechecks. Never leave uncommitted dirty work.
 4. **No Slop:** Write clean, intentional, self-documenting code. Avoid generic filler comments that merely repeat what the code does.
 
@@ -62,6 +62,10 @@ Files, classes, functions, or components that bundle multiple responsibilities a
 
 ## 4. Git & Handoff Continuity Discipline
 
+- **Real-Time `PROGRESS.md` Updates:**
+  - Mark current subtask as `[IN PROGRESS]` before creating/editing files.
+  - Mark as `[x]` with commit reference immediately upon verification.
+  - Keep "Exact Next Step" continuously accurate throughout the conversation, not just upon completion.
 - **Conventional Commits:** `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `test:`.
 - **Handoff Checklist in `PROGRESS.md`:**
   - Current Phase & Active Task
