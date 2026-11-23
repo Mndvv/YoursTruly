@@ -118,7 +118,7 @@
   - Added unit tests in `packages/core/test/gameplay.test.ts` for strict pause, verse rewind, letter reveals, and 50/50 distractors (44 tests passing).
   - Biome check passing 0 errors across 96 files. Full monorepo build verified.
 
-### Phase 6: Sequential Word Queue, Early Answering, Scrubbing Prevention & Retry Limits
+### Phase 6: Sequential Word Queue, Early Answering, Scrubbing Prevention & Retry Limits (Commit `69b07d1`)
 - [x] **Disable YouTube Progress Slider & Scrubbing:**
   - Added `:show-controls="false"` and `:disable-scrubbing="true"` to `YouTubePlayer.vue`.
   - Configured `controls: 0`, `disablekb: 1`, and transparent pointer-events overlay so players cannot cheat or drag the scrubber.
