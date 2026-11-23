@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Phase 3: Authoring & Word-Level Sync Studio & Phase 4: Gameplay Engine & Docker Self-Hosting [COMPLETED]
-- **Active Task:** All planned MVP milestones completed and verified
+- **Current Phase:** Post-Scaffold Fixes & Script Optimization [COMPLETED]
+- **Active Task:** All development scripts and database directory initialization verified
 - **Last Updated:** 2026-11-23
 
 ---
@@ -73,6 +73,29 @@
 - [x] `docker-compose.yml` (SQLite default with optional PostgreSQL via `--profile postgres`)
 - [x] `docker-compose.dev.yml` for local container testing
 - [x] Verified full production bundle generation (`nuxt build` succeeded)
+- [x] Fixed `dev:api` script to invoke `bun --watch apps/api/src/index.ts` directly
+- [x] Auto-created parent directories for SQLite database paths to avoid `SQLITE_CANTOPEN`
+
+---
+
+## Architectural Decisions & Deviations
+
+1. **Bun as Monorepo Package Manager:** Workspaces managed cleanly at root level (`apps/*`, `packages/*`).
+2. **Direct Entrypoint in `dev:api`:** Use `bun --watch apps/api/src/index.ts` instead of `--filter` to prevent workspace directory traversal issues on Windows.
+3. **SQLite Directory Auto-Creation:** `createSqliteDb()` automatically creates parent folders (e.g. `./data/`) recursively before opening file handles.
+
+---
+
+## Known Issues / Blockers
+
+- None. All 31 unit & integration tests passing. `dev:api` and `dev:web` verified.
+
+---
+
+## Exact Next Step
+
+1. Run `bun run dev:api` to start API server on port 4000.
+2. Run `bun run dev:web` to start Nuxt web app on port 3000.
 
 ---
 

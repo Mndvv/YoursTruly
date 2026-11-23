@@ -1,7 +1,16 @@
 import { Database } from "bun:sqlite";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 
 export function createSqliteDb(databasePath = ":memory:") {
+  if (databasePath !== ":memory:") {
+    const dir = dirname(databasePath);
+    if (dir && !existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+  }
+
   const sqlite = new Database(databasePath);
   sqlite.run("PRAGMA journal_mode = WAL;");
   sqlite.run("PRAGMA foreign_keys = ON;");

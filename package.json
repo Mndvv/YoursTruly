@@ -4,10 +4,12 @@
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev:api": "bun --filter api dev",
-    "dev:web": "bun --filter web dev",
-    "dev": "bun --filter \"*\" dev",
-    "build": "bun --filter \"*\" build",
+    "dev:api": "bun --watch apps/api/src/index.ts",
+    "dev:web": "bun --cwd apps/web run dev",
+    "dev": "bun --watch apps/api/src/index.ts",
+    "build:api": "bun build apps/api/src/index.ts --outdir apps/api/dist --target bun",
+    "build:web": "bun --cwd apps/web run build",
+    "build": "bun run build:api && bun run build:web",
     "test": "bun test ./packages/**/test/*.test.ts ./apps/**/test/*.test.ts",
     "lint": "biome check .",
     "format": "biome format --write ."
