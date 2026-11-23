@@ -31,14 +31,23 @@ function showBanner(msg: string, ms = 2200) {
   }, ms);
 }
 
+function checkResumeAfterSolve(solved: boolean) {
+  if (solved && isPaused.value && !game.activeWord.value) {
+    isPaused.value = false;
+    playerRef.value?.play();
+  }
+}
+
 function onStartGame(config: {
   mode: "write" | "choice";
   difficulty: DifficultyLevel;
   pauseMode: PauseMode;
+  ignoreSymbols?: boolean;
 }) {
   game.gameMode.value = config.mode;
   game.difficulty.value = config.difficulty;
   game.pauseMode.value = config.pauseMode;
+  if (config.ignoreSymbols !== undefined) game.ignoreSymbols.value = config.ignoreSymbols;
   isGameStarted.value = true;
   isPaused.value = false;
 }
@@ -50,35 +59,17 @@ function onTimeUpdate(timeMs: number) {
       isPaused.value = true;
       playerRef.value?.pause();
     },
-    onRewindVerse: (toMs: number) => {
+    onRewindVerse: (toMs) => {
       playerRef.value?.seekTo(toMs / 1000);
       showBanner("🔁 Verse Rewind: Rewinding line so you can retry missed lyrics!");
     },
-    onSkipVerse: () => {
-      showBanner("⏭️ Verse Skipped: Max retries reached, continuing song!", 2500);
-    },
+    onSkipVerse: () => showBanner("⏭️ Verse Skipped: Max retries reached, continuing song!", 2500),
   });
 }
 
 function cyclePauseMode() {
   const modes: PauseMode[] = ["verse_loop", "strict", "continuous"];
   game.pauseMode.value = modes[(modes.indexOf(game.pauseMode.value) + 1) % modes.length];
-}
-
-function handleWriteSubmit() {
-  const solved = game.submitAnswer();
-  if (solved && isPaused.value && !game.activeWord.value) {
-    isPaused.value = false;
-    playerRef.value?.play();
-  }
-}
-
-function handleChoiceSelect(choice: string) {
-  const solved = game.selectChoice(choice);
-  if (solved && isPaused.value && !game.activeWord.value) {
-    isPaused.value = false;
-    playerRef.value?.play();
-  }
 }
 
 function replayCurrentLine() {
@@ -98,6 +89,7 @@ function replayCurrentLine() {
     :initial-mode="game.gameMode.value"
     :initial-difficulty="game.difficulty.value"
     :initial-pause-mode="game.pauseMode.value"
+    :initial-ignore-symbols="game.ignoreSymbols.value"
     @start="onStartGame"
   />
 
@@ -138,8 +130,10 @@ function replayCurrentLine() {
       :game-mode="game.gameMode.value"
       :success-count="game.successCount.value"
       :fail-count="game.failCount.value"
+      :ignore-symbols="game.ignoreSymbols.value"
       @cycle-pause-mode="cyclePauseMode"
       @change-mode="(m) => game.gameMode.value = m"
+      @toggle-ignore-symbols="() => game.ignoreSymbols.value = !game.ignoreSymbols.value"
     />
 
     <div
@@ -174,9 +168,10 @@ function replayCurrentLine() {
     <div class="flex flex-col items-center justify-center py-2">
       <WriteInput
         v-if="game.gameMode.value === 'write'"
-        v-model="game.currentInput.value"
+        :model-value="game.currentInput.value"
         :has-error="game.inputHasError.value"
-        @submit="handleWriteSubmit"
+        @update:model-value="(val) => { game.onInputChange(val); checkResumeAfterSolve(true); }"
+        @submit="checkResumeAfterSolve(game.submitAnswer(false))"
         @replay="replayCurrentLine"
         @hint="game.giveHint"
       />
@@ -184,7 +179,7 @@ function replayCurrentLine() {
         v-else
         :choices="game.activeChoices.value"
         :wrong-choices="game.wrongChoices.value"
-        @select="handleChoiceSelect"
+        @select="(c) => checkResumeAfterSolve(game.selectChoice(c))"
         @hint="game.giveHint"
       />
     </div>

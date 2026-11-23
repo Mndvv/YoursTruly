@@ -11,6 +11,7 @@ export function useGameplaySession(song: SongDetailDto) {
   const gameMode = ref<"write" | "choice">("write");
   const difficulty = ref<DifficultyLevel>("intermediate");
   const pauseMode = ref<PauseMode>("verse_loop");
+  const ignoreSymbols = ref(true);
 
   const engine = new GameplaySessionEngine(song, pauseMode.value);
 
@@ -54,25 +55,31 @@ export function useGameplaySession(song: SongDetailDto) {
 
   regenerateGaps();
   watch(difficulty, () => regenerateGaps());
-  watch(pauseMode, (val) => engine.setPauseMode(val));
+  watch(pauseMode, (val) => engine.configure({ pauseMode: val }));
+  watch(ignoreSymbols, (val) => engine.configure({ ignoreSymbols: val }));
 
   function onPlaybackTick(currentTimeMs: number, actions: PlaybackActions) {
     engine.tick(currentTimeMs, actions);
     syncState();
   }
 
-  function submitAnswer(): boolean {
-    const ok = engine.submitAnswer(currentInput.value);
-    if (!ok) {
+  function submitAnswer(isAutoCheck = false): boolean {
+    const ok = engine.submitAnswer(currentInput.value, isAutoCheck);
+    if (!ok && !isAutoCheck) {
       inputHasError.value = true;
       setTimeout(() => {
         inputHasError.value = false;
       }, 600);
-    } else {
+    } else if (ok) {
       currentInput.value = "";
     }
     syncState();
     return ok;
+  }
+
+  function onInputChange(val: string) {
+    currentInput.value = val;
+    submitAnswer(true);
   }
 
   function selectChoice(choice: string): boolean {
@@ -91,6 +98,7 @@ export function useGameplaySession(song: SongDetailDto) {
     gameMode,
     difficulty,
     pauseMode,
+    ignoreSymbols,
     score,
     streak,
     successCount,
@@ -107,6 +115,7 @@ export function useGameplaySession(song: SongDetailDto) {
     activeChoices,
     wrongChoices,
     onPlaybackTick,
+    onInputChange,
     submitAnswer,
     selectChoice,
     giveHint,

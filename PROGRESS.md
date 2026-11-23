@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Gameplay Flow & LingoClip Mechanics Polish: Sequential Word Queue, Early Answering, Scrubbing Prevention, and Stale Verse Auto-Skip [COMPLETE]
-- **Active Task:** All features implemented, verified with 48 passing unit tests across 11 test files, 0 Biome errors across 100 files, and clean monorepo builds. Ready for commit.
+- **Current Phase:** Fast-Typing UX: Real-Time Keystroke Auto-Submit & Configurable Punctuation/Apostrophe Normalization [COMPLETE]
+- **Active Task:** All features implemented, verified with 49 passing unit tests across 11 test files, 0 Biome errors across 100 files, and clean monorepo builds. Ready for commit.
 - **Last Updated:** 2026-11-23
 
 ---
@@ -136,6 +136,19 @@
   - Added comprehensive unit tests in `packages/core/test/session-engine.test.ts` (48 total passing tests).
   - Verified 0 Biome errors across 100 files and successful full monorepo build.
 
+### Phase 7: Fast-Typing UX, Keystroke Auto-Submit & Configurable Symbol Normalization
+- [x] **Real-Time Keystroke Auto-Submit:**
+  - Updated `GameplaySessionEngine.ts` to support non-penalizing keystroke validation (`submitAnswer(input, isAutoCheck = true)`).
+  - As soon as the user finishes typing the matching letters, the word auto-submits instantly, clears input, and advances to the next gap without requiring the Enter key.
+  - Pressing Space or Enter still submits explicitly.
+- [x] **Configurable Apostrophe & Symbol Normalization:**
+  - Enhanced `AnswerValidator.ts` with `ignoreApostrophes: true` and symbol stripping (`!?,.:;"~_()[]{}`).
+  - Typing `dont` matches `don't`, `its` matches `it's`, `im` matches `I'm`, and `rocknroll` matches `rock'n'roll`.
+  - Added user preference toggle in `PreGameLobby.vue` and on-the-fly badge in `ScoreBar.vue` (`🔤 Symbols: Auto` vs `🔤 Symbols: Exact`).
+- [x] **Verification & Tests:**
+  - Added unit tests for apostrophe normalization and real-time auto-submit in `packages/core/test/gameplay.test.ts` and `packages/core/test/session-engine.test.ts` (49 tests passing).
+  - 0 Biome errors across 100 files; full production build clean.
+
 ---
 
 ## Architectural Decisions & Deviations
@@ -144,24 +157,22 @@
 2. **Concurrent Dev Runner (`scripts/dev.ts`):** Spawns Elysia API (`port 4000`) and Nuxt 4 (`port 3000`) concurrently with unified stdout/stderr streaming.
 3. **Pure OOP in `packages/core`:** Zero framework dependencies. Domain logic encapsulated in `GameplaySessionEngine`, `ActiveGapResolver`, `VerseLoopManager`, `AutoPauseController`, `WordHintHelper`, `GameplayScorer`.
 4. **No Godmode Discipline:** Maximum 200 lines per file, 150 lines per class, 35 lines per method, 3 levels of nesting. No dumping grounds like `utils.ts`.
-5. **Frame-Safe Auto-Pause Window & Re-Arming:** `effectiveMs >= endMs - 60` reliably catches word boundaries; verse rewind re-arms automatically once playback seeks back before `lineEndMs - 200`.
-6. **LingoClip Verse Loop Max Retries:** Limits rewind loops to 2 retries (3 passes) before auto-skipping so players are never trapped in infinite loops.
-7. **Immediate Choice Progression:** In Choice Mode, as soon as an answer is selected, choices for the next target gap are generated and rendered instantaneously.
+5. **Keystroke-Level Auto-Validation:** Evaluates input on `@input` with `isAutoCheck = true` so valid words submit with zero latency without penalizing typing mid-word.
+6. **Apostrophe Invariance:** Normalizes `'`, `’`, `‘`, and backticks identically across user input and lyrics token text.
 
 ---
 
 ## Known Issues / Blockers
 
-- None. All 48 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 100 files.
+- None. All 49 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 100 files.
 
 ---
 
 ## Exact Next Step
 
-1. Commit atomic unit: `feat(gameplay): sequential gap queue, early answering, scrubbing prevention, and verse retry limit`.
+1. Commit atomic unit: `feat(gameplay): real-time keystroke auto-submit and configurable apostrophe/symbol normalization`.
 2. Launch `bun run dev` (API on port 4000, Web on port 3000).
 3. Test in browser:
-   - Scrubbing disabled: YouTube progress slider is completely hidden and cannot be dragged.
-   - Choice Mode: Choices update immediately when an answer is clicked without waiting for the next timestamp.
-   - Write Mode: You can type words in advance or finish the verse early; if missed, you can still type it in before the verse ends.
-   - Verse Loop Retry Limit: If verse remains uncompleted after 2-3 loops, it auto-skips with a banner notice and continues the song.
+   - In Write Mode: Type `dont` for `don't` without pressing Enter -> word auto-completes and advances to the next gap the moment the last letter is typed!
+   - Toggle Symbols button in ScoreBar -> `🔤 Symbols: Auto` vs `🔤 Symbols: Exact`.
+

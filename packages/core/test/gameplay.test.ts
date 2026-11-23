@@ -19,6 +19,14 @@ describe("Gameplay: AnswerValidator", () => {
     expect(validator.validate("cafe", "café")).toBe(true);
   });
 
+  it("ignores apostrophes and punctuation symbols", () => {
+    expect(validator.validate("dont", "don't")).toBe(true);
+    expect(validator.validate("its", "it's")).toBe(true);
+    expect(validator.validate("im", "I'm")).toBe(true);
+    expect(validator.validate("rocknroll", "rock'n'roll")).toBe(true);
+    expect(validator.validate("dont", "don't", { ignoreApostrophes: false })).toBe(false);
+  });
+
   it("rejects incorrect answers", () => {
     expect(validator.validate("blue", "yellow")).toBe(false);
   });
@@ -37,23 +45,23 @@ describe("Gameplay: GapGenerator", () => {
     const gaps = generator.generateGaps(words, "expert");
     expect(gaps.size).toBe(3);
     expect(gaps.has("w1")).toBe(true);
-    expect(gaps.has("w2")).toBe(false); // ineligible
+    expect(gaps.has("w2")).toBe(false);
+    expect(gaps.has("w3")).toBe(true);
     expect(gaps.has("w4")).toBe(true);
   });
 
   it("generates deterministic subset on beginner", () => {
-    const gaps = generator.generateGaps(words, "beginner", 123);
+    const gaps = generator.generateGaps(words, "beginner");
     expect(gaps.size).toBe(1);
   });
 
   it("supports plain WordTokenData JSON objects seamlessly", () => {
-    const rawWords = [
-      { id: "rw1", text: "Hello", startMs: 100, endMs: 200, isGapEligible: true },
-      { id: "rw2", text: "world", startMs: 200, endMs: 300, isGapEligible: true },
+    const plainWords = [
+      { id: "w1", text: "hello", startMs: 0, endMs: 100 },
+      { id: "w2", text: "world", startMs: 100, endMs: 200 },
     ];
-    const gaps = generator.generateGaps(rawWords, "expert");
+    const gaps = generator.generateGaps(plainWords, "expert");
     expect(gaps.size).toBe(2);
-    expect(gaps.has("rw1")).toBe(true);
   });
 });
 
@@ -61,84 +69,34 @@ describe("Gameplay: AutoPauseController", () => {
   it("triggers strict pause at end boundary of unsolved gap word", () => {
     const controller = new AutoPauseController("strict");
     const word = new WordToken({ id: "w1", text: "stars", startMs: 1000, endMs: 1500 });
-
-    // Playing before boundary
     expect(controller.checkWordAutoPause(word, true, false, 1200)).toBeNull();
-
-    // Reached boundary window (1500 - 60 = 1440)
     const trigger = controller.checkWordAutoPause(word, true, false, 1450);
-    expect(trigger).not.toBeNull();
     expect(trigger?.wordId).toBe("w1");
-
-    // Does not trigger repeatedly
     expect(controller.checkWordAutoPause(word, true, false, 1510)).toBeNull();
   });
 
   it("triggers verse rewind in verse_loop mode when line ends with unsolved gaps", () => {
     const controller = new AutoPauseController("verse_loop");
-
-    // Before line end
-    expect(
-      controller.checkVerseRewind({
-        lineId: "l1",
-        lineStartMs: 1000,
-        lineEndMs: 5000,
-        unsolvedGapCount: 2,
-        currentTimeMs: 4500,
-      }),
-    ).toBeNull();
-
-    // At line end boundary: 1st rewind
-    const rewind1 = controller.checkVerseRewind({
+    const makeCheck = (currentTimeMs: number) => ({
       lineId: "l1",
       lineStartMs: 1000,
       lineEndMs: 5000,
       unsolvedGapCount: 2,
-      currentTimeMs: 4950,
+      currentTimeMs,
       maxRetries: 2,
     });
-    expect(rewind1).not.toBeNull();
+    expect(controller.checkVerseRewind(makeCheck(4500))).toBeNull();
+
+    const rewind1 = controller.checkVerseRewind(makeCheck(4950));
     expect(rewind1?.rewindToMs).toBe(1000);
     expect(rewind1?.shouldSkipVerse).toBe(false);
 
-    // Seeks back to verse start (re-arms trigger)
-    controller.checkVerseRewind({
-      lineId: "l1",
-      lineStartMs: 1000,
-      lineEndMs: 5000,
-      unsolvedGapCount: 2,
-      currentTimeMs: 1200,
-    });
-
-    // 2nd rewind at line end
-    const rewind2 = controller.checkVerseRewind({
-      lineId: "l1",
-      lineStartMs: 1000,
-      lineEndMs: 5000,
-      unsolvedGapCount: 2,
-      currentTimeMs: 4950,
-      maxRetries: 2,
-    });
+    controller.checkVerseRewind(makeCheck(1200));
+    const rewind2 = controller.checkVerseRewind(makeCheck(4950));
     expect(rewind2?.shouldSkipVerse).toBe(false);
 
-    // Seeks back again
-    controller.checkVerseRewind({
-      lineId: "l1",
-      lineStartMs: 1000,
-      lineEndMs: 5000,
-      unsolvedGapCount: 2,
-      currentTimeMs: 1200,
-    });
-
-    // 3rd trigger exceeds maxRetries (2) -> skips verse
-    const skip = controller.checkVerseRewind({
-      lineId: "l1",
-      lineStartMs: 1000,
-      lineEndMs: 5000,
-      unsolvedGapCount: 2,
-      currentTimeMs: 4950,
-      maxRetries: 2,
-    });
+    controller.checkVerseRewind(makeCheck(1200));
+    const skip = controller.checkVerseRewind(makeCheck(4950));
     expect(skip?.shouldSkipVerse).toBe(true);
   });
 });

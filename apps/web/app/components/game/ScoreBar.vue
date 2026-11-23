@@ -10,16 +10,19 @@ interface Props {
   gameMode: "write" | "choice";
   successCount?: number;
   failCount?: number;
+  ignoreSymbols?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   successCount: 0,
   failCount: 0,
+  ignoreSymbols: true,
 });
 
 const emit = defineEmits<{
   (e: "cyclePauseMode"): void;
   (e: "changeMode", mode: "write" | "choice"): void;
+  (e: "toggleIgnoreSymbols"): void;
 }>();
 
 const accuracy = computed(() => {
@@ -46,7 +49,6 @@ const pauseModeLabel = computed(() => {
         <span class="font-bold text-amber-400 font-mono text-sm">🔥 {{ streak }}</span>
       </div>
       <span class="text-gray-700 hidden sm:inline">|</span>
-      <!-- Accuracy & Pass / Fail Counts -->
       <div class="flex items-center gap-2 font-mono">
         <span class="text-emerald-400 font-bold">✅ {{ successCount }}</span>
         <span class="text-rose-400 font-bold">❌ {{ failCount }}</span>
@@ -57,6 +59,21 @@ const pauseModeLabel = computed(() => {
     </div>
 
     <div class="flex items-center gap-2">
+      <!-- Ignore Symbols Toggle -->
+      <button
+        type="button"
+        :title="ignoreSymbols ? 'Symbols & apostrophes ignored (e.g. dont matches don\'t)' : 'Exact symbols required'"
+        class="px-2.5 py-1 rounded-lg font-medium transition border text-[11px]"
+        :class="[
+          ignoreSymbols
+            ? 'bg-emerald-950/70 border-emerald-700 text-emerald-300'
+            : 'bg-gray-800 border-gray-700 text-gray-400'
+        ]"
+        @click="emit('toggleIgnoreSymbols')"
+      >
+        {{ ignoreSymbols ? '🔤 Symbols: Auto' : '🔤 Symbols: Exact' }}
+      </button>
+
       <!-- Mode Toggle -->
       <button
         type="button"

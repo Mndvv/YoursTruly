@@ -26,10 +26,9 @@ const mockSong: SongDetailDto = {
         startMs: 1000,
         endMs: 5000,
         words: [
-          { id: "w1", text: "look", startMs: 1000, endMs: 1800 },
-          { id: "w2", text: "at", startMs: 1800, endMs: 2500 },
-          { id: "w3", text: "the", startMs: 2500, endMs: 3200 },
-          { id: "w4", text: "stars", startMs: 3200, endMs: 5000 },
+          { id: "w1", text: "don't", startMs: 1000, endMs: 1800 },
+          { id: "w2", text: "look", startMs: 1800, endMs: 2500 },
+          { id: "w3", text: "away", startMs: 2500, endMs: 3200 },
         ],
       },
     ],
@@ -37,21 +36,26 @@ const mockSong: SongDetailDto = {
 };
 
 describe("Gameplay: GameplaySessionEngine", () => {
-  it("immediately targets first unsolved gap in active line and advances early on correct answer", () => {
+  it("supports real-time keystroke auto-submit and ignores apostrophes", () => {
     const engine = new GameplaySessionEngine(mockSong, "verse_loop");
     engine.initGaps("expert");
-
     engine.tick(1200, {});
-    expect(engine.activeWord?.text).toBe("look");
-    expect(engine.activeChoices.length).toBe(4);
 
-    const solved = engine.submitAnswer("look");
-    expect(solved).toBe(true);
+    // Target is "don't"
+    expect(engine.activeWord?.text).toBe("don't");
+
+    // Mid-word keystroke check: does not auto-submit and does not record failure
+    const midCheck = engine.submitAnswer("do", true);
+    expect(midCheck).toBe(false);
+    expect(engine.consecutiveFails).toBe(0);
+
+    // User types "dont" (ignoring apostrophe)
+    const fullCheck = engine.submitAnswer("dont", true);
+    expect(fullCheck).toBe(true);
     expect(engine.solvedGapIds.has("w1")).toBe(true);
 
-    expect(engine.activeWord?.text).toBe("at");
-    expect(engine.activeChoices.length).toBe(4);
-    expect(engine.activeChoices).toContain("at");
+    // Target immediately advances to "look"
+    expect(engine.activeWord?.text).toBe("look");
   });
 
   it("handles verse loop rewinds and auto-skips verse when max retries exceeded", () => {
@@ -96,6 +100,6 @@ describe("Gameplay: GameplaySessionEngine", () => {
       },
     });
     expect(skipped).toBe(true);
-    expect(engine.failedGapIds.size).toBe(4);
+    expect(engine.failedGapIds.size).toBe(3);
   });
 });

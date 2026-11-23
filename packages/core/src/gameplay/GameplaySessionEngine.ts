@@ -26,6 +26,7 @@ export class GameplaySessionEngine {
   private readonly clock = new SyncClockEngine();
   private readonly gapResolver = new ActiveGapResolver();
   private readonly verseLoop: VerseLoopManager;
+  private ignoreSymbols = true;
 
   public readonly gapIds = new Set<string>();
   public readonly solvedGapIds = new Set<string>();
@@ -56,8 +57,9 @@ export class GameplaySessionEngine {
     this.resetWordState();
   }
 
-  public setPauseMode(mode: PauseMode): void {
-    this.autoPauseCtrl.setPauseMode(mode);
+  public configure(opts: { pauseMode?: PauseMode; ignoreSymbols?: boolean }): void {
+    if (opts.pauseMode) this.autoPauseCtrl.setPauseMode(opts.pauseMode);
+    if (opts.ignoreSymbols !== undefined) this.ignoreSymbols = opts.ignoreSymbols;
   }
 
   public tick(currentTimeMs: number, actions: PlaybackActions): void {
@@ -74,10 +76,14 @@ export class GameplaySessionEngine {
     this.checkStrictPause(state.effectiveTimeMs, actions.onAutoPause);
   }
 
-  public submitAnswer(input: string): boolean {
+  public submitAnswer(input: string, isAutoCheck = false): boolean {
     if (!this.activeWord) return false;
     const word = this.activeWord;
-    if (!this.validator.validate(input, word.text)) return this.handleFailure(word);
+    const ok = this.validator.validate(input, word.text, {
+      ignoreApostrophes: this.ignoreSymbols,
+      stripPunctuation: this.ignoreSymbols,
+    });
+    if (!ok) return isAutoCheck ? false : this.handleFailure(word);
     this.consecutiveFails = 0;
     this.solvedGapIds.add(word.id);
     this.autoPauseCtrl.markSolved(word.id);
@@ -87,7 +93,7 @@ export class GameplaySessionEngine {
   }
 
   public selectChoice(choice: string): boolean {
-    const ok = this.submitAnswer(choice);
+    const ok = this.submitAnswer(choice, false);
     if (!ok) this.wrongChoices.add(choice);
     return ok;
   }
@@ -157,12 +163,8 @@ export class GameplaySessionEngine {
   private checkStrictPause(effectiveMs: number, onAutoPause?: () => void): void {
     if (!this.activeWord || !this.gapIds.has(this.activeWord.id) || this.isDone(this.activeWord.id))
       return;
-    if (
-      this.autoPauseCtrl.checkWordAutoPause(this.activeWord, true, false, effectiveMs) &&
-      onAutoPause
-    ) {
-      onAutoPause();
-    }
+    if (this.autoPauseCtrl.checkWordAutoPause(this.activeWord, true, false, effectiveMs))
+      onAutoPause?.();
   }
 
   private handleFailure(word: WordTokenData): boolean {
