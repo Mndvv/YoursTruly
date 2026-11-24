@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PhArrowSquareOut, PhWarningCircle, PhYoutubeLogo } from "@phosphor-icons/vue";
+import { PhArrowSquareOut, PhGlobe, PhWarningCircle, PhYoutubeLogo } from "@phosphor-icons/vue";
 import { computed } from "vue";
 
 interface Props {
@@ -12,6 +12,18 @@ defineEmits<(e: "retry") => void>();
 
 const isEmbedRestricted = computed(() => props.errorCode === 101 || props.errorCode === 150);
 const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId}`);
+
+const isRawIp = computed(() => {
+  if (typeof window === "undefined") return false;
+  const host = window.location.hostname;
+  return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host) && host !== "127.0.0.1";
+});
+
+function switchToDomain() {
+  if (typeof window === "undefined") return;
+  const host = window.location.hostname;
+  window.location.hostname = `${host}.sslip.io`;
+}
 </script>
 
 <template>
@@ -27,7 +39,21 @@ const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId
       {{ isEmbedRestricted ? "Embedding Disabled by Owner" : "Video Playback Error" }}
     </h3>
 
-    <p class="text-[11px] text-gray-300 max-w-xs mb-2.5 leading-relaxed">
+    <div v-if="isEmbedRestricted && isRawIp" class="flex flex-col items-center max-w-xs mb-2">
+      <p class="text-[11px] text-amber-200 mb-2 leading-relaxed">
+        YouTube blocks embeds when accessed via raw IP addresses. Switch to domain mode to fix playback.
+      </p>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow transition min-h-[34px]"
+        @click="switchToDomain"
+      >
+        <PhGlobe :size="15" weight="bold" aria-hidden="true" />
+        <span>Switch to Domain (Fix Playback)</span>
+      </button>
+    </div>
+
+    <p v-else class="text-[11px] text-gray-300 max-w-xs mb-2.5 leading-relaxed">
       <template v-if="isEmbedRestricted">
         The copyright owner has blocked embedding for this video.
       </template>
