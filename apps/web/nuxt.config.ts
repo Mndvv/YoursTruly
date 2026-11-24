@@ -27,6 +27,10 @@ export default defineNuxtConfig({
           content:
             "Learn languages by listening to your favorite YouTube music videos with word-synced lyrics.",
         },
+        {
+          name: "referrer",
+          content: "strict-origin-when-cross-origin",
+        },
       ],
       link: [{ rel: "icon", type: "image/svg+xml", href: "/favicon.svg" }],
     },

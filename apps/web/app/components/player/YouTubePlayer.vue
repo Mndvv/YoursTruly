@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { PhLockSimple } from "@phosphor-icons/vue";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import YouTubeErrorOverlay from "./YouTubeErrorOverlay.vue";
 
 interface Props {
   videoId: string;
@@ -41,9 +42,11 @@ const emit = defineEmits<{
   (e: "play"): void;
   (e: "pause"): void;
   (e: "ended"): void;
+  (e: "error", code: number): void;
 }>();
 
 const containerId = `yt_player_${Math.random().toString(36).substring(2, 9)}`;
+const embedErrorCode = ref<number | null>(null);
 let player: YTPlayer | null = null;
 let animFrame: number | null = null;
 
@@ -79,6 +82,9 @@ function createPlayerInstance() {
   const YT = win.YT as { Player: new (id: string, opts: unknown) => YTPlayer };
   if (!YT || !YT.Player) return;
 
+  const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+  embedErrorCode.value = null;
+
   player = new YT.Player(containerId, {
     width: "100%",
     height: "100%",
@@ -92,6 +98,10 @@ function createPlayerInstance() {
       cc_load_policy: 0,
       iv_load_policy: 3,
       start: Math.floor(props.startMs / 1000),
+      playsinline: 1,
+      enablejsapi: 1,
+      origin,
+      widget_referrer: origin,
     },
     events: {
       onReady: () => disableCaptions(),
@@ -101,6 +111,10 @@ function createPlayerInstance() {
           emit("play");
         } else if (event.data === 2) emit("pause");
         else if (event.data === 0) emit("ended");
+      },
+      onError: (event: { data: number }) => {
+        embedErrorCode.value = event.data;
+        emit("error", event.data);
       },
     },
   });
@@ -124,34 +138,26 @@ function disableCaptions() {
 function pause() {
   if (player && typeof player.pauseVideo === "function") player.pauseVideo();
 }
-
 function play() {
   if (player && typeof player.playVideo === "function") player.playVideo();
 }
-
 function seekTo(seconds: number) {
   if (player && typeof player.seekTo === "function") player.seekTo(seconds, true);
 }
 
-defineExpose({
-  pause,
-  play,
-  seekTo,
-});
+defineExpose({ pause, play, seekTo });
 
 watch(
   () => props.isPaused,
-  (paused) => {
-    if (paused) pause();
-    else play();
-  },
+  (p) => (p ? pause() : play()),
 );
-
 watch(
   () => props.playbackRate,
-  (rate) => {
-    if (player && typeof player.setPlaybackRate === "function") player.setPlaybackRate(rate);
-  },
+  (r) => player?.setPlaybackRate?.(r),
+);
+watch(
+  () => props.videoId,
+  () => createPlayerInstance(),
 );
 
 onMounted(() => initPlayer());
@@ -169,22 +175,23 @@ onBeforeUnmount(() => {
       :class="{ 'blur-2xl scale-110 filter brightness-75': isBlurred }"
     />
     <div
-      v-if="disableScrubbing"
+      v-if="disableScrubbing && !embedErrorCode"
       class="absolute inset-0 z-10 select-none bg-transparent cursor-default"
       @click.stop.prevent
       @mousedown.stop.prevent
       @touchstart.stop.prevent
       @pointerdown.stop.prevent
     />
-    <!-- Lyric Video Blur corner badge (anti-cheat indicator) -->
     <div
-      v-if="isBlurred"
+      v-if="isBlurred && !embedErrorCode"
       class="absolute top-2 right-2 z-15 pointer-events-none flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/80 border border-amber-500/40 text-amber-300 text-[10px] font-medium backdrop-blur-sm shadow select-none"
-      title="Lyric Video Blurred (Anti-Cheat)"
     >
       <PhLockSimple :size="11" weight="bold" aria-hidden="true" />
       <span>Blurred</span>
     </div>
+
+    <!-- YouTube Error & Embedding Restricted Fallback Overlay -->
+    <YouTubeErrorOverlay :error-code="embedErrorCode" :video-id="videoId" />
   </div>
 </template>
 

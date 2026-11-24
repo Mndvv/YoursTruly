@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Phase 14: Non-Repeating Choice Tile Placement & Varied Distractor Sampling
-- **Active Task:** [x] Phase 14 complete — Non-repeating choice tile placement (consecutive repeat count = 0), dynamic whole-song distractor sampling, and non-alphanumeric token gap exclusion
+- **Current Phase:** Phase 15: Mobile YouTube Iframe Embed Optimization & Error 150 Recovery
+- **Active Task:** [x] Phase 15 complete — Configured mobile playsinline, origin & strict-origin referrer, plus YouTubeErrorOverlay fallback for videos with disabled embedding
 - **Last Updated:** 2026-11-24
 
 ---
@@ -303,6 +303,27 @@
 - [x] **AnswerValidator Fallback:** Added clean target length fallback check so non-alphanumeric tokens never cause perpetual hang if present.
 - [x] **Cognitive Complexity & No Godmode Compliance:** Extracted `collectCandidates`, `sampleDistractors`, `pickTargetSlot`, and `buildOptions` helper methods in `ChoiceDistractorGenerator.ts` to keep complexity $\le 15$ and all files strictly $\le 200$ lines.
 - [x] **Test & Build Verification:** 60 Bun unit tests passing, 0 Biome lint errors across 117 files, Nuxt 4 build clean, Docker web & api containers rebuilt and healthy.
+
+---
+
+## Exact Next Step
+
+1. Complete Phase 15: Mobile YouTube Iframe Embed Optimization & Error 150 Recovery.
+2. Verify with unit tests, typechecks, Biome lint, and Nuxt build.
+3. Rebuild Docker and commit.
+
+---
+
+## Phase 15: Mobile YouTube Iframe Embed Optimization & Error 150 Recovery [COMPLETED]
+
+**Completed:** 2026-11-24
+
+### Completed Checklist
+- [x] **Mobile Playsinline & Origin Configuration:** Added `playsinline: 1`, `enablejsapi: 1`, `origin: window.location.origin`, and `widget_referrer: window.location.origin` inside `YouTubePlayer.vue` `playerVars`. Prevents mobile browsers (iOS Safari, mobile Chrome) from refusing inline iframe playback and prompting the user to leave the app for native YouTube.
+- [x] **Strict-Origin Referrer Header:** Configured `<meta name="referrer" content="strict-origin-when-cross-origin">` in `nuxt.config.ts`, ensuring YouTube's Content ID and copyright validation can verify the origin domain rather than failing with an empty referrer.
+- [x] **Error 101 / 150 Handling & Fallback UI:** Built `YouTubeErrorOverlay.vue` to intercept YouTube IFrame API `onError` (Error 101/150 embedding blocked by video owner, Error 100 missing/private). Displays a clean in-player banner explaining the copyright block with a direct "Watch on YouTube" button (`PhYoutubeLogo` + `PhArrowSquareOut`) and guidance to swap to an embeddable lyric/audio version in Sync Studio.
+- [x] **No Godmode Compliance:** Kept `YouTubePlayer.vue` at 194 lines and `YouTubeErrorOverlay.vue` at 55 lines, strictly within the 200-line limit.
+- [x] **Production Verification:** Nuxt 4 build clean, all 60 tests passing, 0 Biome errors across 118 files, Docker web container rebuilt and healthy.
 
 ---
 
