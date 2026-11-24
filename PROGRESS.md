@@ -180,7 +180,7 @@
   - Adhered strictly to `antislop-ui` design rules: no generic gradients, no glowing orbs, high contrast, clean typography, min 44px touch targets.
   - Verified 0 Biome errors across 105 files and 52 passing monorepo unit tests.
 
-### Phase 10: Anti-Cheat CC Disabling, Lyric Video Blur & Verse Loop Rewind Stabilization
+### Phase 10: Anti-Cheat CC Disabling, Lyric Video Blur & Verse Loop Rewind Stabilization (Commit `99afa0f`)
 - [x] **YouTube CC / Subtitle Anti-Cheat:**
   - Added `cc_load_policy: 0` and `iv_load_policy: 3` to `playerVars` in `YouTubePlayer.vue`.
   - Added `disableCaptions()` calling `player.unloadModule("captions")`, `player.unloadModule("cc")`, and clearing caption tracks on `onReady` and state changes.
