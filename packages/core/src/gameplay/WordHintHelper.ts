@@ -1,22 +1,22 @@
 export class WordHintHelper {
   /**
    * Returns a progressively revealed string with letters and underscores.
-   * e.g. ("never", 1) -> "n _ _ _ _"
-   * e.g. ("never", 2) -> "n e _ _ _"
+   * Unicode-safe for non-Latin scripts (Japanese, Korean, Arabic, Cyrillic, etc.)
    */
   public getLetterHint(wordText: string, hintLevel: number): string {
     const clean = wordText.trim();
     if (clean.length === 0) return "";
     if (hintLevel <= 0) {
-      return "_ ".repeat(clean.length).trim();
+      const count = Array.from(clean).length;
+      return "_ ".repeat(count).trim();
     }
 
-    const revealCount = Math.min(clean.length, hintLevel);
-    const chars = clean.split("");
+    const chars = Array.from(clean);
+    const revealCount = Math.min(chars.length, hintLevel);
 
     const parts = chars.map((ch, idx) => {
       if (idx < revealCount) return ch;
-      if (/[^a-zA-Z0-9]/.test(ch)) return ch;
+      if (/[\p{P}\p{S}\s]/u.test(ch)) return ch;
       return "_";
     });
 
@@ -25,6 +25,7 @@ export class WordHintHelper {
 
   /**
    * Eliminates 2 distractors from a 4-choice list, leaving target + 1 distractor.
+   * Shuffles positions to avoid biased layout.
    */
   public get5050Choices(targetWord: string, choices: readonly string[]): string[] {
     const cleanTarget = targetWord.trim().toLowerCase();
@@ -34,16 +35,20 @@ export class WordHintHelper {
       return [...choices];
     }
 
-    // Keep the target and the first distractor
+    // Pick target and one other choice, then randomize order
     const preserved = [targetWord, otherChoices[0]];
-    return preserved.sort((a, b) => a.localeCompare(b));
+    if (Math.random() < 0.5) {
+      preserved.reverse();
+    }
+    return preserved;
   }
 
   /**
    * Returns true if the hint has revealed all characters in the word.
    */
   public isFullyRevealed(wordText: string, hintLevel: number): boolean {
-    const alphanumericLength = wordText.replace(/[^a-zA-Z0-9]/g, "").length;
-    return hintLevel >= alphanumericLength;
+    const clean = wordText.replace(/[\p{P}\p{S}\s]+/gu, "");
+    const charCount = Array.from(clean).length;
+    return hintLevel >= charCount;
   }
 }

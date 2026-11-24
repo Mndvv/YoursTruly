@@ -26,6 +26,7 @@ const emit = defineEmits<{
   (e: "hint"): void;
 }>();
 
+const isComposing = ref(false);
 const lastKey = ref("");
 const lastKeyTime = ref(0);
 
@@ -52,6 +53,11 @@ function isChatterDuplicate(key: string): boolean {
 }
 
 function handleKeyDown(event: KeyboardEvent) {
+  // Never intercept keys while composing with IME (Japanese, Chinese, Korean, etc.)
+  if (event.isComposing || isComposing.value) {
+    return;
+  }
+
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     emit("submit");
@@ -69,6 +75,18 @@ function handleKeyDown(event: KeyboardEvent) {
   }
   if (isChatterDuplicate(event.key)) {
     event.preventDefault();
+  }
+}
+
+function handleCompositionStart() {
+  isComposing.value = true;
+}
+
+function handleCompositionEnd(event: CompositionEvent) {
+  isComposing.value = false;
+  const target = event.target as HTMLInputElement;
+  if (target) {
+    emit("update:modelValue", target.value);
   }
 }
 
@@ -99,6 +117,8 @@ function handleFocus(event: FocusEvent) {
             : 'border-violet-600/80 focus:ring-4 focus:ring-violet-500/30'
         ]"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @compositionstart="handleCompositionStart"
+        @compositionend="handleCompositionEnd"
         @keydown="handleKeyDown"
         @focus="handleFocus"
       />

@@ -34,7 +34,8 @@ export class AnswerValidator {
       ...options,
     };
 
-    let result = text.trim().toLowerCase();
+    // NFKC normalizes full-width Latin/numbers (e.g. ａｂｃ -> abc) and half-width katakana
+    let result = text.trim().normalize("NFKC").toLowerCase();
 
     if (opts.ignoreDiacritics) {
       result = result.normalize("NFD").replace(/\p{Diacritic}/gu, "");
@@ -45,15 +46,9 @@ export class AnswerValidator {
     }
 
     if (opts.stripPunctuation) {
-      result = result.replace(
-        /^[^a-zA-Z0-9\u00C0-\u024F\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]+/,
-        "",
-      );
-      result = result.replace(
-        /[^a-zA-Z0-9\u00C0-\u024F\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff]+$/,
-        "",
-      );
-      result = result.replace(/[!?,.:;"~_()[\]{}]/gu, "");
+      result = opts.ignoreApostrophes
+        ? result.replace(/[^\p{L}\p{N}\s]/gu, "")
+        : result.replace(/[^\p{L}\p{N}\s'’‘`]/gu, "");
     }
 
     return result;

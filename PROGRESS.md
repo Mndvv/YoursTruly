@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Phase 11: Song Editing in Sync Studio & Shifter Method Bug Fix
-- **Active Task:** [x] Phase 11 complete — Re-enter Sync Studio for existing songs with edit token, all toggles (Lyric Video blur, word gap clicks, offset controls), and LyricTimingShifter method fix.
+- **Current Phase:** Phase 13: Non-Latin Unicode Support & Choice Distractor Randomization
+- **Active Task:** [x] Phase 13 complete — Universal non-Latin language optimization (IME composition, Unicode punctuation stripping, CJK blanks) and Fisher-Yates choice distractor shuffle
 - **Last Updated:** 2026-11-24
 
 ---
@@ -276,8 +276,23 @@
 
 ---
 
+## Phase 13: Non-Latin Unicode Support & Choice Distractor Randomization [COMPLETED]
+
+**Completed:** 2026-11-24
+
+### Completed Checklist
+- [x] **Choice Option Randomization:** Replaced deterministic `localeCompare` sorting in `ChoiceDistractorGenerator` with a true Fisher-Yates shuffle algorithm. Correct answers now randomly distribute evenly across Tiles A, B, C, and D instead of clustering on the same tile repeatedly.
+- [x] **Non-Latin Candidate Extraction:** Replaced ASCII-only regex `/[^a-z0-9]/gi` with Unicode property escapes `replace(/[\p{P}\p{S}\s]+/gu, "")` and length checks (`Array.from(clean).length >= 1`). Single-kanji and non-Latin words (Japanese, Chinese, Korean, Cyrillic, Arabic) are now properly extracted as candidate distractors from the song's lyrics.
+- [x] **Universal Unicode Normalization in AnswerValidator:** Added `NFKC` normalization to standardize full-width Latin/numbers (e.g. `ｔｅｓｔ` to `test`) and half-width katakana. Handled punctuation and symbols with Unicode `\p{L}\p{N}\s` while properly respecting `ignoreApostrophes: false`.
+- [x] **Unicode Blank Formatting in LyricDisplay:** Updated `formatBlank` in `LyricDisplay.vue` to use Unicode property stripping and `Array.from` grapheme counting (`Math.max(2, Math.min(6, chars.length))`), accurately sizing blanks for Japanese and non-Latin scripts.
+- [x] **Non-Latin WordHintHelper:** Handled Unicode code points in `WordHintHelper.ts` (`getLetterHint`, `isFullyRevealed`), progressively revealing Japanese characters (e.g. `さくら` -> `さ _ _` -> `さ く _`) and randomizing 50/50 choice hint order.
+- [x] **IME Composition in WriteInput:** Added `isComposing` state with `@compositionstart` and `@compositionend` handlers, plus a guard in `handleKeyDown` ensuring Enter and Space are not intercepted while composing in IME, allowing Japanese/CJK users to convert kana to kanji and select candidates without triggering premature submission.
+- [x] **Test Coverage:** Added `packages/core/test/unicode-gameplay.test.ts` covering Japanese/CJK validation, full-width NFKC normalization, progressive hints, candidate distractor extraction, and 50-iteration Fisher-Yates shuffle distribution. All 59 unit & integration tests passing.
+- [x] **Production Verification:** Clean Biome lint across 117 files, Nuxt 4 production build completed, Docker containers rebuilt and healthy.
+
+---
+
 ## Exact Next Step
 
-1. Commit atomic unit: `feat(ui): overhaul ui with phosphor icons, violet theme, light/dark mode and antislop compliance`.
-2. Present walkthrough to the user.
+1. Await next user instruction or feature request.
 

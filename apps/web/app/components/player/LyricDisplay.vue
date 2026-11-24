@@ -36,8 +36,9 @@ function isFailedWord(wordId: string): boolean {
 }
 
 function formatBlank(text: string): string {
-  const clean = text.replace(/[^a-zA-Z0-9]/g, "");
-  const len = Math.max(3, Math.min(8, clean.length || text.length));
+  const clean = text.replace(/[\p{P}\p{S}\s]+/gu, "");
+  const chars = Array.from(clean || text);
+  const len = Math.max(2, Math.min(6, chars.length));
   return "_ ".repeat(len).trim();
 }
 </script>
