@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhCaretDown, PhCaretUp, PhPencilSimple } from "@phosphor-icons/vue";
 import type { LyricaCandidateDto } from "@yourstruly/contracts";
 import { ref } from "vue";
 import AppButton from "../ui/AppButton.vue";
@@ -60,13 +61,13 @@ function handleApplyCustom() {
       <div
         v-for="candidate in candidates"
         :key="candidate.id"
-        class="p-4 rounded-xl border border-gray-800 bg-gray-850 hover:border-indigo-600 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        class="p-4 rounded-xl border border-gray-800 bg-gray-850 hover:border-violet-600 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
       >
         <div class="flex-1">
           <div class="flex items-center gap-2 mb-1">
             <span class="font-bold text-white">{{ candidate.title }}</span>
             <span class="text-gray-400 text-sm">by {{ candidate.artist }}</span>
-            <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-indigo-950 text-indigo-300 border border-indigo-800">
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-violet-950 text-violet-300 border border-violet-800">
               {{ candidate.source }} ({{ candidate.syncLevel }}-sync)
             </span>
           </div>
@@ -86,10 +87,12 @@ function handleApplyCustom() {
     <div class="pt-3 border-t border-gray-800">
       <button
         type="button"
-        class="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+        class="text-xs text-violet-400 hover:text-violet-300 font-medium flex items-center gap-1 min-h-[36px]"
         @click="isCustomOpen = !isCustomOpen"
       >
-        {{ isCustomOpen ? "▲ Hide Custom / Manual Input" : "✍️ Or Paste Custom / LRC Lyrics Manually" }}
+        <PhCaretUp v-if="isCustomOpen" :size="12" weight="bold" aria-hidden="true" />
+        <PhPencilSimple v-else :size="12" weight="bold" aria-hidden="true" />
+        {{ isCustomOpen ? "Hide Custom / Manual Input" : "Or Paste Custom / LRC Lyrics Manually" }}
       </button>
 
       <div v-if="isCustomOpen" class="mt-3 flex flex-col gap-2">

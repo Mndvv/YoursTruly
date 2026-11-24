@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhKey, PhPencilSimple } from "@phosphor-icons/vue";
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import YouTubePlayer from "../../components/player/YouTubePlayer.vue";
@@ -67,9 +68,12 @@ function onApplyCustom(lyrics: string) {
     <div class="flex items-center justify-between border-b border-gray-800 pb-4">
       <div>
         <h1 class="text-2xl font-extrabold text-white">Authoring & Sync Studio</h1>
-        <p class="text-xs text-gray-400">
-          <span v-if="studio.isEditMode.value" class="text-amber-400 font-semibold mr-2">✏️ Editing Song</span>
-          Step: <span class="uppercase font-mono text-indigo-400">{{ studio.currentStep.value }}</span>
+        <p class="text-xs text-gray-400 flex items-center gap-1.5 mt-0.5">
+          <span v-if="studio.isEditMode.value" class="text-amber-400 font-semibold flex items-center gap-1 mr-2">
+            <PhPencilSimple :size="13" weight="bold" aria-hidden="true" />
+            Editing Song
+          </span>
+          <span>Step: <span class="uppercase font-mono text-violet-400 font-semibold">{{ studio.currentStep.value }}</span></span>
         </p>
       </div>
       <AppButton
@@ -79,7 +83,7 @@ function onApplyCustom(lyrics: string) {
         :disabled="studio.isSubmitting.value"
         @click="studio.submitSong()"
       >
-        {{ studio.isSubmitting.value ? (studio.isEditMode.value ? 'Saving...' : 'Publishing...') : (studio.isEditMode.value ? 'Save Changes 💾' : 'Publish Song 🚀') }}
+        {{ studio.isSubmitting.value ? (studio.isEditMode.value ? 'Saving...' : 'Publishing...') : (studio.isEditMode.value ? 'Save Changes' : 'Publish Song') }}
       </AppButton>
     </div>
 
@@ -144,12 +148,15 @@ function onApplyCustom(lyrics: string) {
       />
 
       <div v-if="studio.isEditMode.value" class="flex items-center gap-3 p-3 bg-gray-900 border border-gray-800 rounded-xl text-xs">
-        <span class="text-gray-400 font-medium whitespace-nowrap">🔑 Edit Token:</span>
+        <span class="text-gray-400 font-medium whitespace-nowrap flex items-center gap-1">
+          <PhKey :size="13" weight="bold" aria-hidden="true" />
+          Edit Token:
+        </span>
         <input
           v-model="studio.editToken.value"
           type="password"
           placeholder="Paste your secret edit token"
-          class="flex-1 bg-gray-950 border border-gray-700 px-2.5 py-1.5 rounded-lg text-white font-mono text-xs focus:border-indigo-500 outline-none"
+          class="flex-1 bg-gray-950 border border-gray-700 px-2.5 py-1.5 rounded-lg text-white font-mono text-xs focus:border-violet-500 outline-none"
         />
       </div>
 

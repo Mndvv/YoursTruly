@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhArrowCounterClockwise, PhLightbulb } from "@phosphor-icons/vue";
 import { ref } from "vue";
 
 interface Props {
@@ -39,7 +40,7 @@ function isChatterDuplicate(key: string): boolean {
     const char = key.toLowerCase();
     const prevChar = props.modelValue[props.modelValue.length - 1].toLowerCase();
     if (char === prevChar) {
-      const cleanTarget = props.targetWord.toLowerCase().replace(/['’‘`]/g, "");
+      const cleanTarget = props.targetWord.toLowerCase().replace(/['''`]/g, "");
       const targetExpected = cleanTarget[props.modelValue.length] ?? "";
       if (targetExpected !== char) return true;
     }
@@ -91,11 +92,11 @@ function handleFocus(event: FocusEvent) {
         autocorrect="off"
         autocapitalize="off"
         spellcheck="false"
-        class="w-full bg-gray-900 border-2 rounded-xl px-4 py-3 text-lg font-bold text-center text-white placeholder-gray-500 focus:outline-none transition shadow-lg"
+        class="w-full bg-gray-900 border-2 rounded-xl px-4 py-3 text-lg font-bold text-center text-white placeholder-gray-500 focus:outline-none transition min-h-[52px]"
         :class="[
           hasError
             ? 'border-rose-500 ring-4 ring-rose-500/30'
-            : 'border-indigo-600/80 focus:ring-4 focus:ring-indigo-500/30'
+            : 'border-violet-600/80 focus:ring-4 focus:ring-violet-500/30'
         ]"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         @keydown="handleKeyDown"
@@ -103,24 +104,28 @@ function handleFocus(event: FocusEvent) {
       />
     </div>
 
-    <!-- Hint Button -->
+    <!-- Hint button -->
     <button
       type="button"
-      title="Give Letter Hint (Shortcut: Ctrl or F1)"
-      class="px-3 py-3 rounded-xl bg-amber-950/40 hover:bg-amber-950/80 text-amber-300 border border-amber-700/60 text-xs font-mono font-bold flex items-center gap-1 transition"
+      title="Give Letter Hint (Ctrl or F1)"
+      aria-label="Hint"
+      class="px-3 py-3 rounded-xl bg-amber-950/40 hover:bg-amber-950/80 text-amber-300 border border-amber-700/60 text-xs font-mono font-bold flex items-center gap-1 transition min-h-[52px]"
       @click="$emit('hint')"
     >
-      💡 Hint
+      <PhLightbulb :size="15" weight="bold" aria-hidden="true" />
+      Hint
     </button>
 
-    <!-- Replay Line Button -->
+    <!-- Replay button -->
     <button
       type="button"
-      title="Replay Line (Shortcut: Tab)"
-      class="px-3 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 text-xs font-mono font-medium flex items-center gap-1 transition"
+      title="Replay Line (Tab)"
+      aria-label="Replay Line"
+      class="px-3 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 text-xs font-mono font-medium flex items-center gap-1 transition min-h-[52px]"
       @click="$emit('replay')"
     >
-      ↺ Tab
+      <PhArrowCounterClockwise :size="15" weight="bold" aria-hidden="true" />
+      Tab
     </button>
   </div>
 </template>

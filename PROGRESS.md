@@ -241,12 +241,39 @@
 
 ---
 
+## Phase 12: UI Overhaul [COMPLETED]
+
+**Completed:** 2026-11-24
+
+### Completed Checklist
+- [x] **Brand Identity & DESIGN.md:** Authored `DESIGN.md` defining the brand character (focused energy, music learning game), violet brand palette (`#7c3aed`), amber game-state accent (`#fbbf24`), typography rules, and antislop compliance.
+- [x] **Complete Emoji Removal:** Replaced 30+ emoji instances across all Vue components with professional Phosphor Icons or clean typography. Zero emoji remain in `apps/web/app/`.
+- [x] **Phosphor Icons Installed:** Integrated `@phosphor-icons/vue` (non-Lucide, with distinct music & game iconography: PhPlay, PhPencilSimple, PhCrosshair, PhTarget, PhProhibit, PhSun, PhMoon, PhLightning, PhCheckCircle, PhXCircle, PhShieldCheck, PhTextbox, PhPenNib, PhSquaresFour, PhHandPalm, PhArrowsClockwise, PhPause, PhArrowCounterClockwise, PhLightbulb, PhLockSimple, PhEyeSlash, PhGear, PhX, PhKey).
+- [x] **Theme System (Light & Dark Mode):** Built `apps/web/app/assets/css/theme.css` with CSS custom properties and full light mode adaptation, plus `useTheme.ts` composable with system preference detection and localStorage persistence.
+- [x] **Header Theme Toggle:** Added accessible sun/moon toggle button in `AppHeader.vue`.
+- [x] **Accessibility & Antislop Compliance:**
+  - Removed `user-scalable=no, maximum-scale=1` from viewport meta in `nuxt.config.ts` (R-39 compliance).
+  - Ensured minimum 44px touch targets on mobile interactive controls (R-03 compliance).
+  - Replaced endless pulse animation on non-live paused banner with static styling (R-19 compliance).
+  - Added skeleton loaders for catalog loading state (R-27 compliance).
+  - Enforced `cursor: pointer` on interactive elements and `cursor: not-allowed` on disabled elements (R-39).
+- [x] **No Godmode Policy Adherence:** Extracted `PauseModeSelector.vue` from `PreGameLobby.vue` and `MobileKeyboardToolbar.vue` from `GameplayContainer.vue` so that every file in `apps/web/app` remains strictly under the 200-line hard limit.
+- [x] **Verification & Builds:**
+  - 54 Bun unit & integration tests passing.
+  - 0 Biome errors across 116 files.
+  - Nuxt 4 production build completed cleanly.
+  - Docker containers (`yourstruly-web-1` and `yourstruly-api-1`) rebuilt and verified live.
+
+---
+
+## Known Issues / Blockers
+
+- None. All 54 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 116 files.
+
+---
+
 ## Exact Next Step
 
-1. Commit atomic unit: `feat(studio): add song editing in sync studio, toggle persistence, and fix shifter method bug`.
-2. Rebuild and restart Docker containers with `docker compose up -d --build`.
-3. Test in browser:
-   - Click "Edit ✏️" on any song card in the catalog or pre-game lobby -> opens Sync Studio directly for that song.
-   - Verify all word timings, Lyric Video blur toggle, global offset, and gap eligibility are loaded and editable.
-   - Modify toggles/timings and click "Save Changes 💾" -> saves update to backend with edit token!
+1. Commit atomic unit: `feat(ui): overhaul ui with phosphor icons, violet theme, light/dark mode and antislop compliance`.
+2. Present walkthrough to the user.
 

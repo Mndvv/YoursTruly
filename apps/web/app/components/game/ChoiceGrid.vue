@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PhLightbulb } from "@phosphor-icons/vue";
+
 interface Props {
   choices: string[];
   disabled?: boolean;
@@ -24,11 +26,11 @@ defineEmits<{
         :key="choice + idx"
         type="button"
         :disabled="disabled || wrongChoices.has(choice)"
-        class="py-3 px-4 rounded-xl font-bold text-base transition-all flex items-center justify-between shadow-md active:scale-95 disabled:opacity-50"
+        class="py-3 px-4 rounded-xl font-bold text-base transition-all flex items-center justify-between shadow-md active:scale-95 disabled:opacity-50 min-h-[52px]"
         :class="[
           wrongChoices.has(choice)
             ? 'bg-rose-950/40 border-2 border-rose-600/80 text-rose-300 line-through'
-            : 'bg-gray-900 border-2 border-gray-800 hover:border-indigo-500 hover:bg-gray-850 text-white'
+            : 'bg-gray-900 border-2 border-gray-800 hover:border-violet-500 hover:bg-gray-850 text-white'
         ]"
         @click="$emit('select', choice)"
       >
@@ -37,14 +39,15 @@ defineEmits<{
       </button>
     </div>
 
-    <!-- 50/50 Hint Button -->
+    <!-- 50/50 hint button -->
     <button
       v-if="choices.length > 2"
       type="button"
-      class="text-xs text-amber-300/80 hover:text-amber-300 font-mono flex items-center gap-1 pt-1"
+      class="text-xs text-amber-300/80 hover:text-amber-300 font-mono flex items-center gap-1 pt-1 min-h-[36px]"
       @click="$emit('hint')"
     >
-      💡 50/50 Hint (Eliminate 2 wrong answers)
+      <PhLightbulb :size="13" weight="bold" aria-hidden="true" />
+      50/50 Hint (Eliminate 2 wrong answers)
     </button>
   </div>
 </template>

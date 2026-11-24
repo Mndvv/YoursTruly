@@ -123,7 +123,7 @@ onMounted(() => loadSongs());
   <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Song Catalog</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Song Catalog</h1>
         <p class="text-gray-400 text-xs sm:text-sm mt-1">Play and master languages with word-synced YouTube music videos.</p>
       </div>
 
@@ -133,7 +133,7 @@ onMounted(() => loadSongs());
           Export JSON
         </AppButton>
         <AppButton size="sm" variant="secondary" :disabled="isImporting" @click="triggerImport">
-          {{ isImporting ? 'Importing...' : 'Import JSON' }}
+          {{ isImporting ? "Importing..." : "Import JSON" }}
         </AppButton>
         <NuxtLink to="/studio">
           <AppButton size="sm" variant="primary">
@@ -143,20 +143,36 @@ onMounted(() => loadSongs());
       </div>
     </div>
 
-    <div v-if="notice" class="mb-6 p-3 bg-indigo-950/70 border border-indigo-700/80 rounded-xl text-xs sm:text-sm text-indigo-200 text-center font-medium shadow-md">
+    <!-- Success notice -->
+    <div v-if="notice" class="mb-6 p-3 bg-violet-950/70 border border-violet-700/80 rounded-xl text-xs sm:text-sm text-violet-200 text-center font-medium">
       {{ notice }}
     </div>
 
-    <div v-if="isLoading" class="text-center py-20 text-gray-500 font-mono text-sm">
-      Loading songs...
+    <!-- Loading state: skeleton cards -->
+    <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        v-for="n in 3"
+        :key="n"
+        class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden animate-pulse"
+        aria-hidden="true"
+      >
+        <div class="aspect-video bg-gray-800" />
+        <div class="p-4 flex flex-col gap-3">
+          <div class="h-5 bg-gray-800 rounded w-3/4" />
+          <div class="h-4 bg-gray-800 rounded w-1/2" />
+          <div class="h-4 bg-gray-800 rounded w-1/3 mt-2" />
+        </div>
+      </div>
     </div>
 
+    <!-- Error state -->
     <div v-else-if="error" class="bg-red-950/40 border border-red-800 rounded-xl p-5 text-center text-red-300 text-sm mb-6">
       {{ error }}
     </div>
 
-    <div v-else-if="songs.length === 0" class="text-center py-20 border border-dashed border-gray-800 rounded-2xl p-6">
-      <p class="text-gray-400 mb-4 text-sm">No songs synced yet. Import an existing catalogue or add a new song!</p>
+    <!-- Empty state: explains why and gives next action -->
+    <div v-else-if="songs.length === 0" class="text-center py-16 border border-dashed border-gray-800 rounded-2xl p-6">
+      <p class="text-gray-400 mb-4 text-sm">No songs synced yet. Import an existing catalogue or add a new song.</p>
       <div class="flex flex-wrap justify-center gap-3">
         <AppButton variant="secondary" @click="triggerImport">Import Catalogue</AppButton>
         <NuxtLink to="/studio">
@@ -165,6 +181,7 @@ onMounted(() => loadSongs());
       </div>
     </div>
 
+    <!-- Song grid -->
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <SongCard
         v-for="song in songs"

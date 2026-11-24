@@ -1,8 +1,19 @@
 <script setup lang="ts">
+import {
+  PhArrowLeft,
+  PhCheck,
+  PhPenNib,
+  PhPencilSimple,
+  PhPlay,
+  PhShieldCheck,
+  PhSquaresFour,
+  PhTextbox,
+} from "@phosphor-icons/vue";
 import type { SongDetailDto } from "@yourstruly/contracts";
 import type { DifficultyLevel, PauseMode } from "@yourstruly/core";
 import { ref } from "vue";
 import AppButton from "../ui/AppButton.vue";
+import PauseModeSelector from "./PauseModeSelector.vue";
 
 interface Props {
   song: SongDetailDto;
@@ -43,24 +54,6 @@ const difficultyOptions: Array<{ level: DifficultyLevel; label: string; badge: s
   { level: "expert", label: "Expert", badge: "100% Gaps" },
 ];
 
-const pauseOptions: Array<{ mode: PauseMode; label: string; desc: string }> = [
-  {
-    mode: "verse_loop",
-    label: "🔁 Verse Loop (LingoClip Style)",
-    desc: "Plays verse continuously. Rewinds if words missed.",
-  },
-  {
-    mode: "strict",
-    label: "🛑 Strict Word Pause",
-    desc: "Pauses immediately at every missing word.",
-  },
-  {
-    mode: "continuous",
-    label: "▶️ Continuous Playback",
-    desc: "Never pauses video. Missed words count as failed.",
-  },
-];
-
 function handleStart() {
   emit("start", {
     mode: selectedMode.value,
@@ -74,123 +67,123 @@ function handleStart() {
 
 <template>
   <div class="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center gap-4 shadow-xl">
+    <!-- Song header card -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center gap-4">
       <img
         :src="`https://i.ytimg.com/vi/${song.youtubeId}/mqdefault.jpg`"
         :alt="song.title"
-        class="w-24 sm:w-28 aspect-video object-cover rounded-xl border border-gray-800"
+        class="w-24 sm:w-28 aspect-video object-cover rounded-xl border border-gray-800 shrink-0"
+        width="320"
+        height="180"
       />
       <div class="flex-1 min-w-0">
-        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-950 text-indigo-300 border border-indigo-800 mb-1">
+        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-violet-950 text-violet-300 border border-violet-800 mb-1">
           {{ song.languageCode.toUpperCase() }}
         </span>
-        <h1 class="text-base sm:text-lg font-extrabold text-white truncate">{{ song.title }}</h1>
+        <h1 class="text-base sm:text-lg font-bold text-white truncate">{{ song.title }}</h1>
         <p class="text-xs text-gray-400 truncate">{{ song.artist }}</p>
       </div>
     </div>
 
-    <!-- Mode Selection -->
+    <!-- 1. Game Mode -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-semibold uppercase tracking-wider text-gray-400">1. Game Mode</label>
+      <label class="text-xs font-semibold text-gray-400">1. Game Mode</label>
       <div class="grid grid-cols-2 gap-3">
         <button
           type="button"
-          class="p-3 rounded-xl border-2 text-left transition flex items-center justify-between"
-          :class="[selectedMode === 'choice' ? 'border-indigo-500 bg-indigo-950/40 text-white shadow-lg' : 'border-gray-800 bg-gray-900 text-gray-300']"
+          class="p-3 rounded-xl border-2 text-left transition flex items-center justify-between min-h-[64px]"
+          :class="[selectedMode === 'choice' ? 'border-violet-500 bg-violet-950/40 text-white' : 'border-gray-800 bg-gray-900 text-gray-300']"
           @click="selectedMode = 'choice'"
         >
-          <div>
-            <div class="font-bold text-sm">🔘 Choice Mode</div>
-            <p class="text-[11px] text-gray-400">Tap 1 of 4 choices</p>
+          <div class="flex items-center gap-2">
+            <PhSquaresFour :size="16" weight="bold" aria-hidden="true" class="shrink-0" />
+            <div>
+              <div class="font-bold text-sm">Choice Mode</div>
+              <p class="text-[11px] text-gray-400">Tap 1 of 4 choices</p>
+            </div>
           </div>
-          <span v-if="selectedMode === 'choice'" class="text-indigo-400 font-bold">✓</span>
+          <PhCheck v-if="selectedMode === 'choice'" :size="16" weight="bold" class="text-violet-400 shrink-0 ml-1" aria-hidden="true" />
         </button>
 
         <button
           type="button"
-          class="p-3 rounded-xl border-2 text-left transition flex items-center justify-between"
-          :class="[selectedMode === 'write' ? 'border-indigo-500 bg-indigo-950/40 text-white shadow-lg' : 'border-gray-800 bg-gray-900 text-gray-300']"
+          class="p-3 rounded-xl border-2 text-left transition flex items-center justify-between min-h-[64px]"
+          :class="[selectedMode === 'write' ? 'border-violet-500 bg-violet-950/40 text-white' : 'border-gray-800 bg-gray-900 text-gray-300']"
           @click="selectedMode = 'write'"
         >
-          <div>
-            <div class="font-bold text-sm">✍️ Write Mode</div>
-            <p class="text-[11px] text-gray-400">Fast auto-submit typing</p>
+          <div class="flex items-center gap-2">
+            <PhPenNib :size="16" weight="bold" aria-hidden="true" class="shrink-0" />
+            <div>
+              <div class="font-bold text-sm">Write Mode</div>
+              <p class="text-[11px] text-gray-400">Fast auto-submit typing</p>
+            </div>
           </div>
-          <span v-if="selectedMode === 'write'" class="text-indigo-400 font-bold">✓</span>
+          <PhCheck v-if="selectedMode === 'write'" :size="16" weight="bold" class="text-violet-400 shrink-0 ml-1" aria-hidden="true" />
         </button>
       </div>
     </div>
 
-    <!-- Difficulty Selection -->
+    <!-- 2. Difficulty -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-semibold uppercase tracking-wider text-gray-400">2. Difficulty Level</label>
+      <label class="text-xs font-semibold text-gray-400">2. Difficulty Level</label>
       <div class="grid grid-cols-2 gap-2">
         <button
           v-for="opt in difficultyOptions"
           :key="opt.level"
           type="button"
-          class="p-2.5 rounded-xl border-2 text-left transition flex items-center justify-between"
-          :class="[selectedDifficulty === opt.level ? 'border-indigo-500 bg-indigo-950/40 text-white shadow-md' : 'border-gray-800 bg-gray-900 text-gray-300']"
+          class="p-2.5 rounded-xl border-2 text-left transition flex items-center justify-between min-h-[52px]"
+          :class="[selectedDifficulty === opt.level ? 'border-violet-500 bg-violet-950/40 text-white' : 'border-gray-800 bg-gray-900 text-gray-300']"
           @click="selectedDifficulty = opt.level"
         >
           <div>
             <span class="font-bold text-xs text-white">{{ opt.label }}</span>
             <span class="text-[10px] font-mono ml-1.5 text-gray-400">{{ opt.badge }}</span>
           </div>
-          <span v-if="selectedDifficulty === opt.level" class="font-bold text-xs text-indigo-400">✓</span>
+          <PhCheck v-if="selectedDifficulty === opt.level" :size="14" weight="bold" class="text-violet-400 shrink-0 ml-1" aria-hidden="true" />
         </button>
       </div>
     </div>
 
-    <!-- Pause Mode Selection -->
-    <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-semibold uppercase tracking-wider text-gray-400">3. Playback & Pause Behavior</label>
-      <div class="flex flex-col gap-1.5">
-        <button
-          v-for="p in pauseOptions"
-          :key="p.mode"
-          type="button"
-          class="p-2.5 rounded-xl border-2 text-left transition flex items-center justify-between"
-          :class="[selectedPauseMode === p.mode ? 'border-amber-500/80 bg-amber-950/30 text-white shadow-md' : 'border-gray-800 bg-gray-900 text-gray-300']"
-          @click="selectedPauseMode = p.mode"
-        >
-          <div>
-            <div class="font-bold text-xs text-white">{{ p.label }}</div>
-            <p class="text-[11px] text-gray-400">{{ p.desc }}</p>
-          </div>
-          <span v-if="selectedPauseMode === p.mode" class="font-bold text-xs text-amber-400 ml-2">✓</span>
-        </button>
-      </div>
-    </div>
+    <!-- 3. Pause mode -->
+    <PauseModeSelector v-model="selectedPauseMode" />
 
-    <!-- Preferences: Symbols & Debounce -->
+    <!-- Preferences -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <label class="flex items-center gap-2.5 p-2.5 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition">
-        <input v-model="selectedIgnoreSymbols" type="checkbox" class="w-4 h-4 rounded text-indigo-600 bg-gray-800 border-gray-700" />
-        <div class="flex-1 text-xs">
-          <span class="font-bold text-white block">🔤 Ignore Symbols</span>
-          <span class="text-gray-400 text-[10px]">dont matches don't</span>
+      <label class="flex items-center gap-2.5 p-2.5 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition min-h-[52px]">
+        <input v-model="selectedIgnoreSymbols" type="checkbox" class="w-4 h-4 rounded text-violet-600 bg-gray-800 border-gray-700 shrink-0" />
+        <div class="flex-1 text-xs flex items-center gap-1.5">
+          <PhTextbox :size="14" weight="bold" aria-hidden="true" class="text-gray-400 shrink-0" />
+          <div>
+            <span class="font-bold text-white block">Ignore Symbols</span>
+            <span class="text-gray-400 text-[10px]">dont matches don't</span>
+          </div>
         </div>
       </label>
-      <label class="flex items-center gap-2.5 p-2.5 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition">
-        <input v-model="selectedDebounce" type="checkbox" class="w-4 h-4 rounded text-indigo-600 bg-gray-800 border-gray-700" />
-        <div class="flex-1 text-xs">
-          <span class="font-bold text-white block">🛡️ Anti-Chatter</span>
-          <span class="text-gray-400 text-[10px]">Filter double letters like 'llike'</span>
+      <label class="flex items-center gap-2.5 p-2.5 bg-gray-900 border border-gray-800 rounded-xl cursor-pointer hover:border-gray-700 transition min-h-[52px]">
+        <input v-model="selectedDebounce" type="checkbox" class="w-4 h-4 rounded text-violet-600 bg-gray-800 border-gray-700 shrink-0" />
+        <div class="flex-1 text-xs flex items-center gap-1.5">
+          <PhShieldCheck :size="14" weight="bold" aria-hidden="true" class="text-gray-400 shrink-0" />
+          <div>
+            <span class="font-bold text-white block">Anti-Chatter</span>
+            <span class="text-gray-400 text-[10px]">Filter double letters like 'llike'</span>
+          </div>
         </div>
       </label>
     </div>
 
     <div class="flex flex-col gap-2 pt-1">
-      <AppButton size="lg" variant="primary" class="w-full text-base py-3 shadow-xl" @click="handleStart">
-        Start Playing ▶
+      <AppButton size="lg" variant="primary" class="w-full" @click="handleStart">
+        <PhPlay :size="18" weight="fill" aria-hidden="true" />
+        Start Playing
       </AppButton>
       <div class="flex items-center justify-between px-1">
-        <NuxtLink to="/" class="text-xs text-gray-500 hover:text-gray-300">
-          ← Song Catalog
+        <NuxtLink to="/" class="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1 min-h-[36px]">
+          <PhArrowLeft :size="13" weight="bold" aria-hidden="true" />
+          Song Catalog
         </NuxtLink>
-        <NuxtLink :to="`/studio?id=${song.id}`" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
-          ✏️ Edit in Sync Studio
+        <NuxtLink :to="`/studio?id=${song.id}`" class="text-xs text-violet-400 hover:text-violet-300 font-semibold flex items-center gap-1 min-h-[36px]">
+          <PhPencilSimple :size="13" weight="bold" aria-hidden="true" />
+          Edit in Sync Studio
         </NuxtLink>
       </div>
     </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhLockSimple } from "@phosphor-icons/vue";
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 interface Props {
@@ -179,7 +180,7 @@ onBeforeUnmount(() => {
       class="absolute inset-0 z-15 pointer-events-none flex flex-col items-center justify-center bg-black/35 backdrop-blur-sm"
     >
       <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-950/80 border border-amber-500/30 text-amber-300 text-xs font-semibold shadow-2xl">
-        <span>🔒</span>
+        <PhLockSimple :size="13" weight="bold" aria-hidden="true" />
         <span>Lyric Video Blurred (Anti-Cheat)</span>
       </div>
     </div>

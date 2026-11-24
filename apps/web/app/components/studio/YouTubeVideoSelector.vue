@@ -64,16 +64,16 @@ function handleDirectSubmit() {
       <div class="flex items-center bg-gray-950 p-1 rounded-xl border border-gray-800 self-start sm:self-auto">
         <button
           type="button"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-          :class="[mode === 'search' ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-white']"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition min-h-[32px]"
+          :class="[mode === 'search' ? 'bg-violet-600 text-white shadow' : 'text-gray-400 hover:text-white']"
           @click="mode = 'search'"
         >
           Search YouTube
         </button>
         <button
           type="button"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-          :class="[mode === 'url' ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-white']"
+          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition min-h-[32px]"
+          :class="[mode === 'url' ? 'bg-violet-600 text-white shadow' : 'text-gray-400 hover:text-white']"
           @click="mode = 'url'"
         >
           Paste Link / ID
@@ -88,7 +88,7 @@ function handleDirectSubmit() {
           v-model="searchQuery"
           type="text"
           placeholder="Search song title or artist (e.g. Porter Robinson Everything Goes On)"
-          class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+          class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-[44px]"
         />
         <AppButton
           type="submit"
@@ -109,7 +109,7 @@ function handleDirectSubmit() {
         <div
           v-for="v in searchResults"
           :key="v.id"
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-950 border border-gray-800 hover:border-indigo-600/60 rounded-xl transition cursor-pointer group"
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gray-950 border border-gray-800 hover:border-violet-600/60 rounded-xl transition cursor-pointer group"
           @click="selectResult(v.id)"
         >
           <div class="flex items-center gap-3 min-w-0">
@@ -129,7 +129,7 @@ function handleDirectSubmit() {
             </div>
 
             <div class="min-w-0 flex-1">
-              <div class="font-bold text-xs sm:text-sm text-white group-hover:text-indigo-400 transition line-clamp-2">
+              <div class="font-bold text-xs sm:text-sm text-white group-hover:text-violet-400 transition line-clamp-2">
                 {{ v.title }}
               </div>
               <div class="text-[11px] text-gray-400 truncate mt-0.5">{{ v.channel }}</div>
@@ -160,7 +160,7 @@ function handleDirectSubmit() {
           v-model="directUrl"
           type="text"
           placeholder="Paste YouTube Video URL or ID (e.g. https://www.youtube.com/watch?v=...)"
-          class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]"
+          class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 min-h-[44px]"
           @keydown.enter.prevent="handleDirectSubmit"
         />
         <AppButton

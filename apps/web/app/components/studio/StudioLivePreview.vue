@@ -39,7 +39,7 @@ const previewWordId = computed<string | null>(() => {
   <div class="flex flex-col gap-1.5">
     <div class="flex items-center justify-between px-1">
       <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Live Lyrics Sync Preview</span>
-      <span class="text-xs font-mono text-indigo-400">{{ (currentTimeMs / 1000).toFixed(1) }}s</span>
+      <span class="text-xs font-mono text-violet-400">{{ (currentTimeMs / 1000).toFixed(1) }}s</span>
     </div>
     <LyricDisplay
       :active-line="previewLine"

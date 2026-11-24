@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PhProhibit, PhTarget } from "@phosphor-icons/vue";
 import type { WordTokenData } from "@yourstruly/contracts";
 
 interface Props {
@@ -20,7 +21,7 @@ const emit = defineEmits<{
   <div class="border border-gray-800 rounded-lg p-3 bg-gray-900/60 flex flex-col gap-2">
     <div class="flex items-center justify-between text-xs text-gray-500 font-mono">
       <span>Line #{{ lineIndex + 1 }}</span>
-      <span v-if="transliteration" class="text-indigo-400 italic">{{ transliteration }}</span>
+      <span v-if="transliteration" class="text-violet-400 italic">{{ transliteration }}</span>
     </div>
 
     <div class="flex flex-wrap items-center gap-2">
@@ -30,7 +31,7 @@ const emit = defineEmits<{
         class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs border transition"
         :class="[
           w.isGapEligible
-            ? 'bg-gray-800 border-indigo-700/60 text-gray-200'
+            ? 'bg-gray-800 border-violet-700/60 text-gray-200'
             : 'bg-gray-900 border-gray-800 text-gray-500 line-through'
         ]"
       >
@@ -40,11 +41,13 @@ const emit = defineEmits<{
         </span>
         <button
           type="button"
-          class="text-[10px] px-1 rounded hover:bg-gray-700 text-gray-400"
+          class="text-[10px] p-0.5 rounded hover:bg-gray-700 text-gray-400 flex items-center justify-center min-w-[20px] min-h-[20px]"
           :title="w.isGapEligible ? 'Exclude from gaps' : 'Make eligible for gap'"
+          :aria-label="w.isGapEligible ? 'Exclude from gaps' : 'Make eligible for gap'"
           @click="emit('toggleGap', w.id)"
         >
-          {{ w.isGapEligible ? '🎯' : '🚫' }}
+          <PhTarget v-if="w.isGapEligible" :size="13" weight="bold" class="text-violet-400" aria-hidden="true" />
+          <PhProhibit v-else :size="13" weight="bold" class="text-gray-500" aria-hidden="true" />
         </button>
       </div>
     </div>

@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { PhArrowLeft, PhGear } from "@phosphor-icons/vue";
 import type { SongDetailDto } from "@yourstruly/contracts";
 import type { DifficultyLevel, PauseMode } from "@yourstruly/core";
 import { ref } from "vue";
 import ChoiceGrid from "../../components/game/ChoiceGrid.vue";
 import GameplayBanner from "../../components/game/GameplayBanner.vue";
+import MobileKeyboardToolbar from "../../components/game/MobileKeyboardToolbar.vue";
 import PreGameLobby from "../../components/game/PreGameLobby.vue";
 import ScoreBar from "../../components/game/ScoreBar.vue";
 import WriteInput from "../../components/game/WriteInput.vue";
@@ -65,10 +67,10 @@ function onTimeUpdate(timeMs: number) {
     },
     onRewindVerse: (toMs) => {
       playerRef.value?.seekTo(toMs / 1000);
-      showBanner("🔁 Verse Rewind: Rewinding line so you can retry missed lyrics!");
+      showBanner("Verse Rewind: Rewinding line to retry missed lyrics!");
       checkResumeAfterSolve(game.submitAnswer(true));
     },
-    onSkipVerse: () => showBanner("⏭️ Verse Skipped: Max retries reached, continuing song!", 2500),
+    onSkipVerse: () => showBanner("Verse Skipped: Max retries reached, continuing song!", 2500),
   });
   checkResumeAfterSolve(false);
 }
@@ -106,12 +108,18 @@ function replayCurrentLine() {
     :style="{ paddingBottom: isKeyboardOpen ? `${keyboardHeight}px` : '1rem' }"
   >
     <div class="flex items-center justify-between">
-      <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium">← Exit Game</NuxtLink>
+      <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium min-h-[36px]">
+        <PhArrowLeft :size="13" weight="bold" aria-hidden="true" />
+        Exit Game
+      </NuxtLink>
       <button
         type="button"
-        class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-800"
+        class="text-xs text-violet-400 hover:text-violet-300 font-semibold px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-800 flex items-center gap-1.5 min-h-[36px]"
         @click="isGameStarted = false"
-      >⚙️ Change Difficulty / Mode</button>
+      >
+        <PhGear :size="13" weight="bold" aria-hidden="true" />
+        Change Difficulty / Mode
+      </button>
     </div>
 
     <!-- Sticky Video Player (Scrubber & Controls Disabled for Gameplay) -->
@@ -184,14 +192,6 @@ function replayCurrentLine() {
     </div>
 
     <!-- Floating Virtual Keyboard Toolbar on Mobile -->
-    <div v-if="isKeyboardOpen" class="fixed bottom-3 right-4 z-50 sm:hidden">
-      <button
-        type="button"
-        class="px-3 py-1.5 rounded-full bg-gray-900 border border-gray-700 text-xs font-semibold text-gray-200 shadow-xl backdrop-blur flex items-center gap-1 active:scale-95 transition"
-        @click="dismissKeyboard"
-      >
-        <span>Hide Keyboard ✕</span>
-      </button>
-    </div>
+    <MobileKeyboardToolbar v-if="isKeyboardOpen" @dismiss="dismissKeyboard" />
   </div>
 </template>

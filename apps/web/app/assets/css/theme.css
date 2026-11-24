@@ -1,0 +1,154 @@
+/* YoursTruly — CSS Custom Property Theme System
+ * Loaded globally via nuxt.config.ts css array.
+ * Dark mode is the default; .light class on <html> activates light mode.
+ */
+
+:root {
+  /* Surfaces */
+  --color-surface: #030712;
+  --color-surface-raised: #111827;
+  --color-surface-overlay: #1f2937;
+
+  /* Borders */
+  --color-border: #1f2937;
+  --color-border-subtle: #374151;
+
+  /* Text */
+  --color-text: #e5e7eb;
+  --color-text-muted: #9ca3af;
+  --color-text-emphasis: #ffffff;
+
+  /* Brand violet */
+  --color-brand: #7c3aed;
+  --color-brand-hover: #6d28d9;
+  --color-brand-surface: #2e1065;
+  --color-brand-text: #c4b5fd;
+  --color-brand-border: #5b21b6;
+
+  /* Accent amber — game state only (streak, hints, active word) */
+  --color-accent: #fbbf24;
+  --color-accent-surface: #451a03;
+  --color-accent-text: #fcd34d;
+  --color-accent-border: #b45309;
+}
+
+/* Light mode: toggled via .light class on <html> */
+html.light {
+  --color-surface: #f9fafb;
+  --color-surface-raised: #ffffff;
+  --color-surface-overlay: #f3f4f6;
+
+  --color-border: #e5e7eb;
+  --color-border-subtle: #d1d5db;
+
+  --color-text: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-text-emphasis: #111827;
+
+  --color-brand: #6d28d9;
+  --color-brand-hover: #5b21b6;
+  --color-brand-surface: #f5f3ff;
+  --color-brand-text: #6d28d9;
+  --color-brand-border: #ddd6fe;
+
+  --color-accent: #d97706;
+  --color-accent-surface: #fffbeb;
+  --color-accent-text: #92400e;
+  --color-accent-border: #fde68a;
+}
+
+/* Light mode utility mappings for seamless component adaptation */
+html.light body {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+html.light .bg-gray-950 {
+  background-color: var(--color-surface) !important;
+}
+
+html.light .bg-gray-900 {
+  background-color: var(--color-surface-raised) !important;
+}
+
+html.light .bg-gray-900\/90,
+html.light .bg-gray-900\/80,
+html.light .bg-gray-900\/60 {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+html.light .bg-gray-850,
+html.light .bg-gray-800,
+html.light .bg-gray-800\/90,
+html.light .bg-gray-800\/80 {
+  background-color: var(--color-surface-overlay) !important;
+}
+
+html.light .border-gray-800,
+html.light .border-gray-800\/80 {
+  border-color: var(--color-border) !important;
+}
+
+html.light .border-gray-700,
+html.light .border-gray-700\/60 {
+  border-color: var(--color-border-subtle) !important;
+}
+
+html.light .text-white,
+html.light .text-gray-100 {
+  color: var(--color-text-emphasis) !important;
+}
+
+html.light .text-gray-200,
+html.light .text-gray-300 {
+  color: var(--color-text) !important;
+}
+
+html.light .text-gray-400 {
+  color: var(--color-text-muted) !important;
+}
+
+html.light .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+/* In light mode, subtle violet surfaces invert cleanly */
+html.light .bg-violet-950,
+html.light .bg-violet-950\/80,
+html.light .bg-violet-950\/70,
+html.light .bg-violet-950\/40 {
+  background-color: var(--color-brand-surface) !important;
+  color: var(--color-brand-text) !important;
+  border-color: var(--color-brand-border) !important;
+}
+
+/* In light mode, subtle amber surfaces invert cleanly */
+html.light .bg-amber-950,
+html.light .bg-amber-950\/80,
+html.light .bg-amber-950\/70,
+html.light .bg-amber-950\/40,
+html.light .bg-amber-950\/30 {
+  background-color: var(--color-accent-surface) !important;
+  color: var(--color-accent-text) !important;
+  border-color: var(--color-accent-border) !important;
+}
+
+/* Base: cursor affordances (R-39) */
+button:not([disabled]),
+a[href],
+label[for],
+[role="button"] {
+  cursor: pointer;
+}
+
+button[disabled],
+input[disabled] {
+  cursor: not-allowed;
+}
+
+/* Respect prefers-reduced-motion for all pulse animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse {
+    animation: none;
+  }
+}

@@ -379,3 +379,55 @@ volumes:
 - [ ] Build gameplay screens: Write Mode, Choice Mode, Difficulty selector, Auto-Pause (default ON), and Replay Line.
 - [ ] Polish mobile-first sticky player and virtual-keyboard-safe layout.
 - [ ] Finalize `Dockerfile`s, `docker-compose.yml`, auto-migrations on startup, and self-hosting docs in `README.md`.
+
+
+---
+
+## Phase 12: UI Overhaul — Icons, Violet Theme, Light/Dark Toggle
+
+**Status:** COMPLETED
+**Branch:** `main`
+**Design doc:** `DESIGN.md`
+**Plan artifact:** `brain/be179c61.../ui-overhaul-plan.md`
+
+### Goals
+- Remove all emoji from UI text (30+ instances); replace with Phosphor Icons
+- Replace indigo brand color with violet (breaks AI-default palette)
+- Implement CSS custom property color system for light and dark modes
+- Add working light/dark theme toggle (stored in localStorage, defaults to system preference)
+- Fix viewport meta: remove `user-scalable=no` (R-39 violation)
+- Add skeleton loading state to song catalog
+- Remove `animate-pulse` from non-live paused banner (R-19)
+- Use Geist font with reason
+
+### Todo Checklist
+
+- [x] Install `@phosphor-icons/vue` in `apps/web/`
+- [x] Create `apps/web/app/assets/css/theme.css` (CSS custom properties)
+- [x] Create `apps/web/app/composables/useTheme.ts`
+- [x] Update `apps/web/tailwind.config.ts` (violet/amber brand colors)
+- [x] Update `apps/web/nuxt.config.ts` (fix viewport meta, add Geist font)
+- [x] Update `app.vue` (useTheme, violet selection)
+- [x] Update `AppHeader.vue` (violet tokens, Sun/Moon theme toggle)
+- [x] Update `AppButton.vue` (violet primary, 44px min touch target)
+- [x] Update `SongCard.vue` (icons: Edit, play count)
+- [x] Update `SongCatalogContainer.vue` (skeleton loader, violet tokens)
+- [x] Update `PreGameLobby.vue` (all emoji → Phosphor icons)
+- [x] Update `ScoreBar.vue` (all emoji → Phosphor icons)
+- [x] Update `GameplayBanner.vue` (emoji → icons, remove endless pulse)
+- [x] Update `WriteInput.vue` (emoji → icons)
+- [x] Update `ChoiceGrid.vue` (emoji → icon)
+- [x] Update `LyricDisplay.vue` (emoji → icons, motion a11y)
+- [x] Update `YouTubePlayer.vue` (`🔒` → LockSimple icon)
+- [x] Update `LyricVideoToggle.vue` (`🔒` → EyeSlash icon)
+- [x] Update `LyricCandidatePicker.vue` (`✍️` → icon)
+- [x] Update `StudioPublishedCard.vue` (remove `🎉`, styled success mark)
+- [x] Update `SyncStudioContainer.vue` feature (emoji → icons)
+- [x] Update `GameplayContainer.vue` (emoji → icons)
+- [x] Run `bun run lint && bun test && bun run build`
+- [x] Click-through verification: dark mode, then light mode, mobile viewport
+- [x] Commit: `feat: phase 12 — ui overhaul, icons, violet theme, light/dark toggle`
+- [x] Update `PROGRESS.md`
+
+### Known Bug (Phase 12 follow-on after overhaul)
+- `findFirstStartMs is not a function` in LyricDisplay after adding lyrics in Sync Studio — **already fixed in Phase 11** (committed `ca02df3`).

@@ -18,7 +18,7 @@ useHead({
 <template>
   <div v-if="error" class="max-w-md mx-auto py-20 text-center">
     <p class="text-red-400 mb-4">Could not load this song.</p>
-    <NuxtLink to="/" class="text-indigo-400 hover:underline">Return to Catalog</NuxtLink>
+    <NuxtLink to="/" class="text-violet-400 hover:underline">Return to Catalog</NuxtLink>
   </div>
   <GameplayContainer v-else-if="song" :song="song" />
 </template>

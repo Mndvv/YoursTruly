@@ -27,7 +27,7 @@ function adjustOffset(delta: number) {
   <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex flex-col gap-3">
     <div class="flex items-center justify-between">
       <span class="text-sm font-semibold text-gray-200">Global Sync Offset</span>
-      <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-gray-800 text-indigo-400">
+      <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-gray-800 text-violet-400">
         {{ globalOffsetMs >= 0 ? `+${globalOffsetMs}` : globalOffsetMs }} ms
       </span>
     </div>

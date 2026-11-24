@@ -63,7 +63,7 @@ onBeforeUnmount(() => {
   <div class="flex flex-col items-center gap-3 w-full">
     <div class="flex items-center justify-between w-full text-xs text-gray-400 font-mono">
       <span>Word {{ currentWordIndex + 1 }} of {{ totalWords }}</span>
-      <span class="text-indigo-400">Shortcut: Hold & Release [Spacebar]</span>
+      <span class="text-violet-400">Shortcut: Hold &amp; Release [Spacebar]</span>
     </div>
 
     <button
@@ -72,7 +72,7 @@ onBeforeUnmount(() => {
       :class="[
         isPressed
           ? 'bg-yellow-500/20 border-yellow-400 text-yellow-300 ring-4 ring-yellow-500/30'
-          : 'bg-gray-800/80 border-gray-700 hover:border-indigo-500 text-gray-200'
+          : 'bg-gray-800/80 border-gray-700 hover:border-violet-500 text-gray-200'
       ]"
       @pointerdown="handlePointerDown"
       @pointerup="handlePointerUp"
