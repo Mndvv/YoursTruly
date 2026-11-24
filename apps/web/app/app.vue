@@ -11,7 +11,7 @@ useTheme();
     class="min-h-screen bg-gray-950 text-gray-200 flex flex-col font-sans selection:bg-violet-600 selection:text-white transition-colors duration-200"
   >
     <AppHeader />
-    <main class="flex-1 pb-16">
+    <main class="flex-1">
       <NuxtPage />
     </main>
   </div>

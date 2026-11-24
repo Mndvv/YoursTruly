@@ -257,6 +257,10 @@
   - Replaced endless pulse animation on non-live paused banner with static styling (R-19 compliance).
   - Added skeleton loaders for catalog loading state (R-27 compliance).
   - Enforced `cursor: pointer` on interactive elements and `cursor: not-allowed` on disabled elements (R-39).
+- [x] **Gameplay Viewport & Zero-CLS Optimizations:**
+  - Removed large centered "Lyric Video Blurred" text overlay and replaced with a discreet corner badge (`PhLockSimple` + "Blurred" in top-right corner).
+  - Scaled and constrained YouTube embed (`max-h-[22vh]` mobile, `max-h-[26vh]` desktop) with 100% iframe scaling so the entire gameplay screen fits in the viewport without vertical scrolling.
+  - Fixed Cumulative Layout Shift (CLS = 0) in `GameplayBanner.vue` by giving it a permanent fixed-height container (`h-9 sm:h-10`) so that verse rewind/skip notices and pause states never shift the lyrics or choice buttons downward, eliminating fast-track misclicks.
 - [x] **No Godmode Policy Adherence:** Extracted `PauseModeSelector.vue` from `PreGameLobby.vue` and `MobileKeyboardToolbar.vue` from `GameplayContainer.vue` so that every file in `apps/web/app` remains strictly under the 200-line hard limit.
 - [x] **Verification & Builds:**
   - 54 Bun unit & integration tests passing.

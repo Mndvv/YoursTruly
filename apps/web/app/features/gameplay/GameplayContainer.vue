@@ -104,17 +104,17 @@ function replayCurrentLine() {
 
   <div
     v-else
-    class="max-w-4xl mx-auto px-4 py-4 flex flex-col gap-4 transition-all duration-200"
-    :style="{ paddingBottom: isKeyboardOpen ? `${keyboardHeight}px` : '1rem' }"
+    class="max-w-3xl mx-auto px-3 sm:px-4 py-2 flex flex-col gap-2 sm:gap-2.5 transition-all duration-200"
+    :style="{ paddingBottom: isKeyboardOpen ? `${keyboardHeight}px` : '0.5rem' }"
   >
     <div class="flex items-center justify-between">
-      <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium min-h-[36px]">
+      <NuxtLink to="/" class="text-xs text-gray-400 hover:text-white flex items-center gap-1 font-medium min-h-[32px]">
         <PhArrowLeft :size="13" weight="bold" aria-hidden="true" />
         Exit Game
       </NuxtLink>
       <button
         type="button"
-        class="text-xs text-violet-400 hover:text-violet-300 font-semibold px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-800 flex items-center gap-1.5 min-h-[36px]"
+        class="text-xs text-violet-400 hover:text-violet-300 font-semibold px-2.5 py-1 rounded-lg bg-gray-900 border border-gray-800 flex items-center gap-1.5 min-h-[32px]"
         @click="isGameStarted = false"
       >
         <PhGear :size="13" weight="bold" aria-hidden="true" />
@@ -122,20 +122,22 @@ function replayCurrentLine() {
       </button>
     </div>
 
-    <!-- Sticky Video Player (Scrubber & Controls Disabled for Gameplay) -->
-    <div class="sticky top-14 z-20 bg-gray-950 pb-2">
-      <YouTubePlayer
-        ref="playerRef"
-        :video-id="song.youtubeId"
-        :start-ms="song.videoStartMs"
-        :end-ms="song.videoEndMs"
-        :is-paused="isPaused"
-        :autoplay="true"
-        :show-controls="false"
-        :disable-scrubbing="true"
-        :is-blurred="Boolean(song.lyricsData?.isLyricVideo)"
-        @timeupdate="onTimeUpdate"
-      />
+    <!-- Sticky Video Player (compact to preserve vertical space for gameplay controls) -->
+    <div class="sticky top-14 z-20 bg-gray-950 pb-1 flex justify-center">
+      <div class="w-full max-w-lg aspect-video max-h-[22vh] sm:max-h-[26vh] md:max-h-[28vh]">
+        <YouTubePlayer
+          ref="playerRef"
+          :video-id="song.youtubeId"
+          :start-ms="song.videoStartMs"
+          :end-ms="song.videoEndMs"
+          :is-paused="isPaused"
+          :autoplay="true"
+          :show-controls="false"
+          :disable-scrubbing="true"
+          :is-blurred="Boolean(song.lyricsData?.isLyricVideo)"
+          @timeupdate="onTimeUpdate"
+        />
+      </div>
     </div>
 
     <ScoreBar

@@ -54,9 +54,9 @@ const pauseModeLabel = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-900 border border-gray-800 rounded-xl px-4 py-2.5 text-xs">
+  <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-900 border border-gray-800 rounded-xl px-3 py-1.5 text-xs">
     <!-- Left: score / streak / accuracy / difficulty -->
-    <div class="flex flex-wrap items-center gap-3">
+    <div class="flex flex-wrap items-center gap-2.5">
       <div class="flex items-center gap-1.5">
         <span class="text-gray-400">Score:</span>
         <span class="font-bold text-violet-400 font-mono text-sm">{{ score }}</span>

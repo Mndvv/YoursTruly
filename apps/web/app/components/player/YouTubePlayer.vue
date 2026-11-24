@@ -80,6 +80,8 @@ function createPlayerInstance() {
   if (!YT || !YT.Player) return;
 
   player = new YT.Player(containerId, {
+    width: "100%",
+    height: "100%",
     videoId: props.videoId,
     playerVars: {
       autoplay: props.autoplay ? 1 : 0,
@@ -174,15 +176,21 @@ onBeforeUnmount(() => {
       @touchstart.stop.prevent
       @pointerdown.stop.prevent
     />
-    <!-- Lyric Video Ambient Censorship Overlay -->
+    <!-- Lyric Video Blur corner badge (anti-cheat indicator) -->
     <div
       v-if="isBlurred"
-      class="absolute inset-0 z-15 pointer-events-none flex flex-col items-center justify-center bg-black/35 backdrop-blur-sm"
+      class="absolute top-2 right-2 z-15 pointer-events-none flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/80 border border-amber-500/40 text-amber-300 text-[10px] font-medium backdrop-blur-sm shadow select-none"
+      title="Lyric Video Blurred (Anti-Cheat)"
     >
-      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-950/80 border border-amber-500/30 text-amber-300 text-xs font-semibold shadow-2xl">
-        <PhLockSimple :size="13" weight="bold" aria-hidden="true" />
-        <span>Lyric Video Blurred (Anti-Cheat)</span>
-      </div>
+      <PhLockSimple :size="11" weight="bold" aria-hidden="true" />
+      <span>Blurred</span>
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(iframe) {
+  width: 100% !important;
+  height: 100% !important;
+}
+</style>

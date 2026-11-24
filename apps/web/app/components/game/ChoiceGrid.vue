@@ -19,14 +19,14 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-2 w-full max-w-md">
-    <div class="grid grid-cols-2 gap-3 w-full">
+  <div class="flex flex-col items-center gap-1.5 w-full max-w-md">
+    <div class="grid grid-cols-2 gap-2 sm:gap-2.5 w-full">
       <button
         v-for="(choice, idx) in choices"
         :key="choice + idx"
         type="button"
         :disabled="disabled || wrongChoices.has(choice)"
-        class="py-3 px-4 rounded-xl font-bold text-base transition-all flex items-center justify-between shadow-md active:scale-95 disabled:opacity-50 min-h-[52px]"
+        class="py-2 sm:py-2.5 px-3 sm:px-4 rounded-xl font-bold text-sm sm:text-base transition-all flex items-center justify-between shadow-md active:scale-95 disabled:opacity-50 min-h-[44px] sm:min-h-[48px]"
         :class="[
           wrongChoices.has(choice)
             ? 'bg-rose-950/40 border-2 border-rose-600/80 text-rose-300 line-through'
@@ -43,7 +43,7 @@ defineEmits<{
     <button
       v-if="choices.length > 2"
       type="button"
-      class="text-xs text-amber-300/80 hover:text-amber-300 font-mono flex items-center gap-1 pt-1 min-h-[36px]"
+      class="text-xs text-amber-300/80 hover:text-amber-300 font-mono flex items-center gap-1 pt-0.5 min-h-[30px]"
       @click="$emit('hint')"
     >
       <PhLightbulb :size="13" weight="bold" aria-hidden="true" />
