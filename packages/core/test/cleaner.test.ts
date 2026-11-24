@@ -30,4 +30,14 @@ describe("YouTubeTitleCleaner", () => {
     expect(result.artist).toBe("Queen");
     expect(result.song).toBe("Bohemian Rhapsody");
   });
+
+  it("detects lyric videos by title keywords", () => {
+    expect(
+      cleaner.isLyricVideo("Porter Robinson - Everything Goes On (Official Lyric Video)"),
+    ).toBe(true);
+    expect(cleaner.isLyricVideo("Taylor Swift - Cardigan (Lyrics)")).toBe(true);
+    expect(cleaner.isLyricVideo("Song Name (Lyricss video)")).toBe(true);
+    expect(cleaner.isLyricVideo("Coldplay - Yellow [Official Music Video]")).toBe(false);
+    expect(cleaner.isLyricVideo("Radiohead - Creep (Live)")).toBe(false);
+  });
 });

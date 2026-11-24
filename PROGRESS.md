@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Phase 9: Catalogue Export/Import, In-App YouTube Search, and Mobile Virtual Keyboard UX [COMPLETE]
-- **Active Task:** All features, Docker self-hosting, LAN/mobile API reverse proxy, and port 4000 mapping verified. Both containers healthy and accessible on LAN.
+- **Current Phase:** Phase 10: Anti-Cheat CC Disabling, Lyric Video Blur, and Verse Loop Stabilization
+- **Active Task:** [x] Phase 10 complete — YouTube CC disabled, lyric video auto-detection & blur implemented, and verse loop rewind line locking stabilized against flashing and input disruption.
 - **Last Updated:** 2026-11-24
 
 ---
@@ -180,6 +180,28 @@
   - Adhered strictly to `antislop-ui` design rules: no generic gradients, no glowing orbs, high contrast, clean typography, min 44px touch targets.
   - Verified 0 Biome errors across 105 files and 52 passing monorepo unit tests.
 
+### Phase 10: Anti-Cheat CC Disabling, Lyric Video Blur & Verse Loop Rewind Stabilization
+- [x] **YouTube CC / Subtitle Anti-Cheat:**
+  - Added `cc_load_policy: 0` and `iv_load_policy: 3` to `playerVars` in `YouTubePlayer.vue`.
+  - Added `disableCaptions()` calling `player.unloadModule("captions")`, `player.unloadModule("cc")`, and clearing caption tracks on `onReady` and state changes.
+- [x] **Lyric Video Auto-Detection, Schema & Censorship Blur:**
+  - Added `isLyricVideo: z.boolean().default(false)` in `packages/contracts/src/lyrics.schema.ts`.
+  - Implemented `isLyricVideo(rawTitle: string): boolean` in `YouTubeTitleCleaner.ts` detecting `\b(lyrics?|lyricss?)\b` keywords.
+  - Added `isLyricVideo` to `SongLyrics` domain model and serialization.
+  - Created Tier 1 presentational `LyricVideoToggle.vue` (39 lines) in Sync Studio with auto-detect badge and manual toggle.
+  - Extracted tap sync logic into `useStudioTapSync.ts` (74 lines) to keep `useSyncStudio.ts` (165 lines) and `SyncStudioContainer.vue` (183 lines) clean.
+  - Added `isBlurred` prop and ambient background blur styling (`blur-2xl scale-110 filter brightness-75` + censorship indicator) to `YouTubePlayer.vue`.
+  - Passed `:is-blurred="Boolean(song.lyricsData?.isLyricVideo)"` from `GameplayContainer.vue` (197 lines) and extracted `GameplayBanner.vue` (35 lines).
+- [x] **Verse Loop Rewind Anti-Flash & Anti-Cheat Fix:**
+  - Added `pendingRewindLine`, `pendingRewindToMs`, and `rewindExpiryMs` to `VerseLoopManager.ts`.
+  - Locked `activeLine` during asynchronous YouTube iframe seeks in `GameplaySessionEngine.ts` (197 lines) until player clock arrives at target rewind timestamp (`timeMs <= targetRewindMs + 400`).
+  - Extracted `WordTransitionHelper.ts` (81 lines) to handle gap skipping and failure transitions.
+  - Prevented lyrics from flashing forward or unmasking, preserved user typing input during loop transitions, and prevented choice distractor reshuffling.
+- [x] **Verification & Tests:**
+  - Added unit tests for title detection in `packages/core/test/cleaner.test.ts` and rewind activeLine locking in `packages/core/test/session-engine.test.ts`.
+  - All 54 monorepo tests passing across 11 test suites.
+  - 0 Biome errors across 109 files. Strict NO GODMODE limits enforced across all files (all <= 200 lines).
+
 ---
 
 ## Architectural Decisions & Deviations
@@ -190,20 +212,19 @@
 4. **No Godmode Discipline:** Maximum 200 lines per file, 150 lines per class, 35 lines per method, 3 levels of nesting. No dumping grounds like `utils.ts`.
 5. **Keystroke-Level Auto-Validation:** Evaluates input on `@input` with `isAutoCheck = true` so valid words submit with zero latency without penalizing typing mid-word.
 6. **Apostrophe Invariance:** Normalizes `'`, `’`, `‘`, and backticks identically across user input and lyrics token text.
+7. **Rewind ActiveLine Pinning:** Pinning `activeLine` in `VerseLoopManager` during asynchronous seek avoids visual flicker, prevents cheating, and preserves user input.
 
 ---
 
 ## Known Issues / Blockers
 
-- None. All 49 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 100 files.
+- None. All 54 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 109 files.
 
 ---
 
 ## Exact Next Step
 
-1. Commit atomic unit: `feat(gameplay): real-time keystroke auto-submit and configurable apostrophe/symbol normalization`.
-2. Launch `bun run dev` (API on port 4000, Web on port 3000).
-3. Test in browser:
-   - In Write Mode: Type `dont` for `don't` without pressing Enter -> word auto-completes and advances to the next gap the moment the last letter is typed!
-   - Toggle Symbols button in ScoreBar -> `🔤 Symbols: Auto` vs `🔤 Symbols: Exact`.
+1. Commit atomic unit: `feat(gameplay): disable YouTube CC, blur lyric videos, and stabilize verse loop rewinds`.
+2. Deploy/Rebuild Docker containers with `docker compose up -d --build`.
+3. Verify YouTube player CC disabled, lyric video blur toggle in Studio & Gameplay, and smooth verse loop rewinds in browser.
 

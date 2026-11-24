@@ -6,6 +6,7 @@ export interface SongLyricsConfig {
   source?: string;
   syncLevel: SyncLevel;
   hasTransliteration?: boolean;
+  isLyricVideo?: boolean;
   lines: LyricLine[];
 }
 
@@ -14,6 +15,7 @@ export class SongLyrics {
   private readonly source: string;
   private readonly syncLevel: SyncLevel;
   private readonly transliteration: boolean;
+  private readonly isLyricVideo: boolean;
   private readonly lines: readonly LyricLine[];
 
   constructor(config: SongLyricsConfig) {
@@ -21,6 +23,7 @@ export class SongLyrics {
     this.source = config.source ?? "lyrica";
     this.syncLevel = config.syncLevel;
     this.transliteration = config.hasTransliteration ?? false;
+    this.isLyricVideo = config.isLyricVideo ?? false;
     this.lines = [...config.lines];
   }
 
@@ -40,6 +43,10 @@ export class SongLyrics {
     return this.transliteration;
   }
 
+  public getIsLyricVideo(): boolean {
+    return this.isLyricVideo;
+  }
+
   public getLines(): readonly LyricLine[] {
     return this.lines;
   }
@@ -51,6 +58,7 @@ export class SongLyrics {
       source: this.source,
       syncLevel: this.syncLevel,
       hasTransliteration: this.transliteration,
+      isLyricVideo: this.isLyricVideo,
       lines: this.lines.map((l) => l.shift(offsetMs)),
     });
   }
@@ -61,6 +69,7 @@ export class SongLyrics {
       source: this.source,
       syncLevel: this.syncLevel,
       hasTransliteration: this.transliteration,
+      isLyricVideo: this.isLyricVideo,
       lines: this.lines.map((l) => l.toData()),
     };
   }
@@ -71,6 +80,7 @@ export class SongLyrics {
       source: data.source,
       syncLevel: data.syncLevel,
       hasTransliteration: data.hasTransliteration,
+      isLyricVideo: data.isLyricVideo ?? false,
       lines: data.lines.map((l) => LyricLine.fromData(l)),
     });
   }

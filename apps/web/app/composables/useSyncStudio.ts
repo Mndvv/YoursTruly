@@ -4,12 +4,13 @@ import type {
   LyricsData,
   SongCreatedResponseDto,
 } from "@yourstruly/contracts";
-import { LyricTimingShifter, LyricsNormalizer, TapSyncRecorder } from "@yourstruly/core";
-import { computed, ref } from "vue";
+import { LyricsNormalizer, YouTubeTitleCleaner } from "@yourstruly/core";
+import { ref } from "vue";
+import { useStudioTapSync } from "./useStudioTapSync";
 
 export function useSyncStudio(apiBase = "") {
   const normalizer = new LyricsNormalizer();
-  const shifter = new LyricTimingShifter();
+  const titleCleaner = new YouTubeTitleCleaner();
   const currentStep = ref<"youtube" | "lyrics" | "sync" | "done">("youtube");
 
   const youtubeUrl = ref("");
@@ -21,6 +22,8 @@ export function useSyncStudio(apiBase = "") {
   const globalOffsetMs = ref(0);
   const videoStartMs = ref(0);
   const videoEndMs = ref<number | null>(null);
+  const isLyricVideo = ref(false);
+  const isAutoDetectedLyricVideo = ref(false);
 
   const lyricsData = ref<LyricsData | null>(null);
   const candidates = ref<LyricaCandidateDto[]>([]);
@@ -28,15 +31,7 @@ export function useSyncStudio(apiBase = "") {
   const createdSong = ref<SongCreatedResponseDto | null>(null);
   const isSubmitting = ref(false);
 
-  const recorder = new TapSyncRecorder();
-  const currentWordIndex = ref(0);
-
-  const allWords = computed(() => {
-    if (!lyricsData.value) return [];
-    return lyricsData.value.lines.flatMap((line) => line.words);
-  });
-
-  const currentWord = computed(() => allWords.value[currentWordIndex.value] ?? null);
+  const tapSync = useStudioTapSync(lyricsData);
 
   async function fetchYouTubeMetadata() {
     if (!youtubeUrl.value) return;
@@ -49,6 +44,9 @@ export function useSyncStudio(apiBase = "") {
     videoTitle.value = data.title;
     artistName.value = data.parsedArtist || data.authorName;
     songTitle.value = data.parsedTitle || data.title;
+    const isLyric = titleCleaner.isLyricVideo(data.title || "");
+    isLyricVideo.value = isLyric;
+    isAutoDetectedLyricVideo.value = isLyric;
 
     currentStep.value = "lyrics";
     await searchCandidates("", artistName.value, songTitle.value);
@@ -94,39 +92,6 @@ export function useSyncStudio(apiBase = "") {
     currentStep.value = "sync";
   }
 
-  function recordTapDown(timeMs: number) {
-    recorder.onTapDown(timeMs);
-  }
-
-  function recordTapUp(timeMs: number) {
-    const timing = recorder.onTapUp(timeMs);
-    if (timing && allWords.value[timing.wordIndex]) {
-      const target = allWords.value[timing.wordIndex];
-      target.startMs = timing.startMs;
-      target.endMs = timing.endMs;
-    }
-    currentWordIndex.value = recorder.getCurrentWordIndex();
-  }
-
-  function toggleWordGap(wordId: string) {
-    const word = allWords.value.find((w) => w.id === wordId);
-    if (word) word.isGapEligible = !word.isGapEligible;
-  }
-
-  const firstLyricStartMs = computed(() => {
-    return lyricsData.value ? shifter.findEarliestStartMs(lyricsData.value) : null;
-  });
-
-  function shiftAllLyrics(deltaMs: number) {
-    if (!lyricsData.value) return;
-    lyricsData.value = shifter.shiftAllByDelta(lyricsData.value, deltaMs);
-  }
-
-  function alignStartToTime(targetMs: number) {
-    if (!lyricsData.value) return;
-    lyricsData.value = shifter.alignStartToTime(lyricsData.value, targetMs);
-  }
-
   async function submitSong(): Promise<SongCreatedResponseDto> {
     if (!lyricsData.value || !youtubeId.value) throw new Error("Missing song or lyric data");
     isSubmitting.value = true;
@@ -139,7 +104,7 @@ export function useSyncStudio(apiBase = "") {
       videoStartMs: videoStartMs.value,
       videoEndMs: videoEndMs.value,
       globalOffsetMs: globalOffsetMs.value,
-      lyricsData: lyricsData.value,
+      lyricsData: { ...lyricsData.value, isLyricVideo: isLyricVideo.value },
     };
 
     try {
@@ -175,24 +140,26 @@ export function useSyncStudio(apiBase = "") {
     globalOffsetMs,
     videoStartMs,
     videoEndMs,
+    isLyricVideo,
+    isAutoDetectedLyricVideo,
     lyricsData,
     candidates,
     isSearchingLyrics,
-    allWords,
-    currentWord,
-    currentWordIndex,
     createdSong,
     isSubmitting,
-    firstLyricStartMs,
-    shiftAllLyrics,
-    alignStartToTime,
     fetchYouTubeMetadata,
     searchCandidates,
     selectCandidate,
     useCustomLyrics,
-    recordTapDown,
-    recordTapUp,
-    toggleWordGap,
     submitSong,
+    allWords: tapSync.allWords,
+    currentWord: tapSync.currentWord,
+    currentWordIndex: tapSync.currentWordIndex,
+    firstLyricStartMs: tapSync.firstLyricStartMs,
+    recordTapDown: tapSync.recordTapDown,
+    recordTapUp: tapSync.recordTapUp,
+    toggleWordGap: tapSync.toggleWordGap,
+    shiftAllLyrics: tapSync.shiftAllLyrics,
+    alignStartToTime: tapSync.alignStartToTime,
   };
 }

@@ -37,6 +37,10 @@ export class YouTubeTitleCleaner {
     };
   }
 
+  public isLyricVideo(rawTitle: string): boolean {
+    return /\b(lyrics?|lyricss?)\b/i.test(rawTitle);
+  }
+
   private cleanAuthorName(author: string): string {
     return author
       .replace(/\s*-\s*topic$/i, "")

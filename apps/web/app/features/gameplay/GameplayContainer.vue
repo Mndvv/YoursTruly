@@ -3,19 +3,16 @@ import type { SongDetailDto } from "@yourstruly/contracts";
 import type { DifficultyLevel, PauseMode } from "@yourstruly/core";
 import { ref } from "vue";
 import ChoiceGrid from "../../components/game/ChoiceGrid.vue";
+import GameplayBanner from "../../components/game/GameplayBanner.vue";
 import PreGameLobby from "../../components/game/PreGameLobby.vue";
 import ScoreBar from "../../components/game/ScoreBar.vue";
 import WriteInput from "../../components/game/WriteInput.vue";
 import LyricDisplay from "../../components/player/LyricDisplay.vue";
 import YouTubePlayer from "../../components/player/YouTubePlayer.vue";
-import AppButton from "../../components/ui/AppButton.vue";
 import { useGameplaySession } from "../../composables/useGameplaySession";
 import { useVirtualKeyboard } from "../../composables/useVirtualKeyboard";
 
-interface Props {
-  song: SongDetailDto;
-}
-const props = defineProps<Props>();
+const props = defineProps<{ song: SongDetailDto }>();
 const game = useGameplaySession(props.song);
 const { isKeyboardOpen, keyboardHeight, dismissKeyboard } = useVirtualKeyboard();
 
@@ -40,21 +37,21 @@ function checkResumeAfterSolve(solved: boolean) {
   }
 }
 
-type StartConfig = {
+interface StartConfig {
   mode: "write" | "choice";
   difficulty: DifficultyLevel;
   pauseMode: PauseMode;
   ignoreSymbols?: boolean;
   debounceDoubleLetters?: boolean;
-};
+}
 
-function onStartGame(config: StartConfig) {
-  game.gameMode.value = config.mode;
-  game.difficulty.value = config.difficulty;
-  game.pauseMode.value = config.pauseMode;
-  if (config.ignoreSymbols !== undefined) game.ignoreSymbols.value = config.ignoreSymbols;
-  if (config.debounceDoubleLetters !== undefined)
-    game.debounceDoubleLetters.value = config.debounceDoubleLetters;
+function onStartGame(c: StartConfig) {
+  game.gameMode.value = c.mode;
+  game.difficulty.value = c.difficulty;
+  game.pauseMode.value = c.pauseMode;
+  if (c.ignoreSymbols !== undefined) game.ignoreSymbols.value = c.ignoreSymbols;
+  if (c.debounceDoubleLetters !== undefined)
+    game.debounceDoubleLetters.value = c.debounceDoubleLetters;
   isGameStarted.value = true;
   isPaused.value = false;
 }
@@ -128,6 +125,7 @@ function replayCurrentLine() {
         :autoplay="true"
         :show-controls="false"
         :disable-scrubbing="true"
+        :is-blurred="Boolean(song.lyricsData?.isLyricVideo)"
         @timeupdate="onTimeUpdate"
       />
     </div>
@@ -148,14 +146,11 @@ function replayCurrentLine() {
       @toggle-debounce="() => game.debounceDoubleLetters.value = !game.debounceDoubleLetters.value"
     />
 
-    <div v-if="bannerNotice" class="bg-indigo-950/80 border border-indigo-500 rounded-xl px-4 py-2 text-center text-xs text-indigo-200 font-bold shadow-lg">
-      {{ bannerNotice }}
-    </div>
-
-    <div v-else-if="isPaused" class="bg-amber-950/80 border border-amber-600/80 rounded-xl px-4 py-2.5 text-center flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-lg animate-pulse">
-      <span class="text-xs sm:text-sm text-amber-200 font-bold">⏸️ Paused at missing word! Enter answer or click Hint to continue.</span>
-      <AppButton size="sm" variant="secondary" @click="replayCurrentLine">🔄 Replay Line (Tab)</AppButton>
-    </div>
+    <GameplayBanner
+      :banner-notice="bannerNotice"
+      :is-paused="isPaused"
+      @replay="replayCurrentLine"
+    />
 
     <LyricDisplay
       :active-line="game.activeLine.value"

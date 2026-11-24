@@ -73,18 +73,23 @@ export class GameplaySessionEngine {
     this.resetWordState();
   }
 
-  public configure(opts: EngineConfig): void {
-    if (opts.pauseMode) this.autoPauseCtrl.setPauseMode(opts.pauseMode);
-    if (opts.ignoreSymbols !== undefined) this.ignoreSymbols = opts.ignoreSymbols;
-    if (opts.debounceDoubleLetters !== undefined) {
-      this.debounceDoubleLetters = opts.debounceDoubleLetters;
-    }
+  public configure({ pauseMode, ignoreSymbols, debounceDoubleLetters }: EngineConfig): void {
+    if (pauseMode) this.autoPauseCtrl.setPauseMode(pauseMode);
+    if (ignoreSymbols !== undefined) this.ignoreSymbols = ignoreSymbols;
+    if (debounceDoubleLetters !== undefined) this.debounceDoubleLetters = debounceDoubleLetters;
   }
 
   public tick(currentTimeMs: number, actions: PlaybackActions): void {
     const lines = this.song.lyricsData.lines;
-    const state = this.clock.resolveState(lines, currentTimeMs, this.song.globalOffsetMs);
-    this.activeLine = (state.activeLine as LyricLineData | null) ?? null;
+    const pending = this.verseLoop.getPendingRewindLine();
+    let effectiveMs = Math.max(0, currentTimeMs + this.song.globalOffsetMs);
+    if (pending) {
+      this.activeLine = pending;
+    } else {
+      const state = this.clock.resolveState(lines, currentTimeMs, this.song.globalOffsetMs);
+      this.activeLine = (state.activeLine as LyricLineData | null) ?? null;
+      effectiveMs = state.effectiveTimeMs;
+    }
     if (!this.activeLine) {
       this.transitions.activeWord = null;
       this.transitions.activeChoices = [];
@@ -92,11 +97,17 @@ export class GameplaySessionEngine {
     }
     const handled = this.verseLoop.handleVerse(
       this.activeLine,
-      state.effectiveTimeMs,
+      effectiveMs,
       this.gapIds,
       this.isDone,
       actions,
-      (unsolved) => this.skipVerseGaps(unsolved),
+      (unsolved) =>
+        this.transitions.skipVerseGaps(
+          unsolved,
+          this.failedGapIds,
+          () => this.scorer.recordFailure(),
+          () => this.advanceToNextGap(),
+        ),
       (first) => first && this.transitions.transitionToWord(first, () => this.resetWordState()),
     );
     if (handled) return;
@@ -107,7 +118,7 @@ export class GameplaySessionEngine {
       this.activeWord,
       this.gapIds,
       this.isDone,
-      state.effectiveTimeMs,
+      effectiveMs,
       actions.onAutoPause,
     );
   }
@@ -159,7 +170,6 @@ export class GameplaySessionEngine {
   }
 
   private isDone = (id: string): boolean => this.solvedGapIds.has(id) || this.failedGapIds.has(id);
-
   private resetWordState(): void {
     this.hintLevel = 0;
     this.currentHint = null;
@@ -173,24 +183,14 @@ export class GameplaySessionEngine {
     );
   }
 
-  private skipVerseGaps(unsolved: WordTokenData[]): void {
-    for (const g of unsolved) {
-      this.failedGapIds.add(g.id);
-      this.scorer.recordFailure();
-    }
-    this.advanceToNextGap();
-  }
-
   private failWord(word: WordTokenData): void {
-    this.failedGapIds.add(word.id);
-    this.autoPauseCtrl.markSolved(word.id);
-    this.advanceToNextGap();
+    this.transitions.failWord(word, this.failedGapIds, () => this.advanceToNextGap());
   }
 
   private handleFailure(word: WordTokenData): boolean {
     this.consecutiveFails += 1;
     this.scorer.recordFailure();
-    if (this.autoPauseCtrl.getPauseMode() !== "strict" || this.consecutiveFails < 3) return false;
+    if (!this.transitions.shouldFailStrict(this.consecutiveFails)) return false;
     this.failWord(word);
     return true;
   }

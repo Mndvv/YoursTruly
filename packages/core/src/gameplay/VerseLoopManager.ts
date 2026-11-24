@@ -21,10 +21,24 @@ export interface VerseLoopResult {
 }
 
 export class VerseLoopManager {
+  private pendingRewindLine: LyricLineData | null = null;
+  private pendingRewindToMs: number | null = null;
+  private rewindExpiryMs: number | null = null;
+
   constructor(
     private readonly autoPauseCtrl: AutoPauseController,
     private readonly gapResolver: ActiveGapResolver,
   ) {}
+
+  public getPendingRewindLine(): LyricLineData | null {
+    return this.pendingRewindLine;
+  }
+
+  public clearPendingRewind(): void {
+    this.pendingRewindLine = null;
+    this.pendingRewindToMs = null;
+    this.rewindExpiryMs = null;
+  }
 
   public evaluate(
     line: LyricLineData,
@@ -53,13 +67,29 @@ export class VerseLoopManager {
     onSkip: (gaps: WordTokenData[]) => void,
     onRewind: (first: WordTokenData | null) => void,
   ): boolean {
+    if (this.pendingRewindLine) {
+      const isExpired = this.rewindExpiryMs !== null && Date.now() > this.rewindExpiryMs;
+      const hasReachedStart = timeMs <= (this.pendingRewindToMs ?? 0) + 400;
+      if (isExpired || hasReachedStart) {
+        this.clearPendingRewind();
+      } else {
+        return true;
+      }
+    }
+
     const res = this.evaluate(line, timeMs, gapIds, isDone);
     if (!res) return false;
     if (res.shouldSkip) {
+      this.clearPendingRewind();
       onSkip(res.unsolvedGaps);
       actions.onSkipVerse?.();
       return true;
     }
+
+    this.pendingRewindLine = line;
+    this.pendingRewindToMs = res.rewind.rewindToMs;
+    this.rewindExpiryMs = Date.now() + 2000;
+
     actions.onRewindVerse?.(res.rewind.rewindToMs);
     const first = this.gapResolver.findTargetGap(line, gapIds, isDone);
     onRewind(first);

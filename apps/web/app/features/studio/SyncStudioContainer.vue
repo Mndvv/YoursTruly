@@ -5,6 +5,7 @@ import { computed, ref } from "vue";
 import LyricDisplay from "../../components/player/LyricDisplay.vue";
 import YouTubePlayer from "../../components/player/YouTubePlayer.vue";
 import LyricCandidatePicker from "../../components/studio/LyricCandidatePicker.vue";
+import LyricVideoToggle from "../../components/studio/LyricVideoToggle.vue";
 import OffsetControl from "../../components/studio/OffsetControl.vue";
 import TapSyncPad from "../../components/studio/TapSyncPad.vue";
 import TrackAlignmentControl from "../../components/studio/TrackAlignmentControl.vue";
@@ -144,6 +145,11 @@ function onApplyCustom(lyrics: string) {
         :total-words="studio.allWords.value.length"
         @tapdown="studio.recordTapDown(currentTimeMs)"
         @tapup="studio.recordTapUp(currentTimeMs)"
+      />
+
+      <LyricVideoToggle
+        v-model="studio.isLyricVideo.value"
+        :is-auto-detected="studio.isAutoDetectedLyricVideo.value"
       />
 
       <OffsetControl

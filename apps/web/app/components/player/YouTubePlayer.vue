@@ -10,6 +10,7 @@ interface Props {
   autoplay?: boolean;
   showControls?: boolean;
   disableScrubbing?: boolean;
+  isBlurred?: boolean;
 }
 
 interface YTPlayer {
@@ -19,6 +20,8 @@ interface YTPlayer {
   seekTo?: (seconds: number, allowSeekAhead?: boolean) => void;
   destroy?: () => void;
   setPlaybackRate?: (rate: number) => void;
+  unloadModule?: (module: string) => void;
+  setOption?: (module: string, option: string, value: unknown) => void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,6 +32,7 @@ const props = withDefaults(defineProps<Props>(), {
   autoplay: false,
   showControls: true,
   disableScrubbing: false,
+  isBlurred: false,
 });
 
 const emit = defineEmits<{
@@ -82,17 +86,36 @@ function createPlayerInstance() {
       disablekb: props.disableScrubbing ? 1 : 0,
       fs: 0,
       rel: 0,
+      cc_load_policy: 0,
+      iv_load_policy: 3,
       start: Math.floor(props.startMs / 1000),
     },
     events: {
+      onReady: () => disableCaptions(),
       onStateChange: (event: { data: number }) => {
-        if (event.data === 1) emit("play");
-        else if (event.data === 2) emit("pause");
+        if (event.data === 1) {
+          disableCaptions();
+          emit("play");
+        } else if (event.data === 2) emit("pause");
         else if (event.data === 0) emit("ended");
       },
     },
   });
   animFrame = requestAnimationFrame(pollTime);
+}
+
+function disableCaptions() {
+  if (!player) return;
+  try {
+    if (typeof player.unloadModule === "function") {
+      player.unloadModule("captions");
+      player.unloadModule("cc");
+    }
+    if (typeof player.setOption === "function") {
+      player.setOption("captions", "track", {});
+      player.setOption("cc", "track", {});
+    }
+  } catch (_) {}
 }
 
 function pause() {
@@ -137,7 +160,11 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl relative border border-gray-800">
-    <div :id="containerId" class="w-full h-full" />
+    <div
+      :id="containerId"
+      class="w-full h-full transition-[filter,transform] duration-500"
+      :class="{ 'blur-2xl scale-110 filter brightness-75': isBlurred }"
+    />
     <div
       v-if="disableScrubbing"
       class="absolute inset-0 z-10 select-none bg-transparent cursor-default"
@@ -146,5 +173,15 @@ onBeforeUnmount(() => {
       @touchstart.stop.prevent
       @pointerdown.stop.prevent
     />
+    <!-- Lyric Video Ambient Censorship Overlay -->
+    <div
+      v-if="isBlurred"
+      class="absolute inset-0 z-15 pointer-events-none flex flex-col items-center justify-center bg-black/35 backdrop-blur-sm"
+    >
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-950/80 border border-amber-500/30 text-amber-300 text-xs font-semibold shadow-2xl">
+        <span>🔒</span>
+        <span>Lyric Video Blurred (Anti-Cheat)</span>
+      </div>
+    </div>
   </div>
 </template>

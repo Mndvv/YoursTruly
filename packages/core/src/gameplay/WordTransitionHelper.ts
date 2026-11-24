@@ -55,4 +55,27 @@ export class WordTransitionHelper {
       this.activeChoices = [];
     }
   }
+
+  public skipVerseGaps(
+    unsolved: WordTokenData[],
+    failedIds: Set<string>,
+    onScoreFail: () => void,
+    onAdvance: () => void,
+  ): void {
+    for (const g of unsolved) {
+      failedIds.add(g.id);
+      onScoreFail();
+    }
+    onAdvance();
+  }
+
+  public failWord(word: WordTokenData, failedIds: Set<string>, onAdvance: () => void): void {
+    failedIds.add(word.id);
+    this.autoPauseCtrl.markSolved(word.id);
+    onAdvance();
+  }
+
+  public shouldFailStrict(consecutiveFails: number): boolean {
+    return this.autoPauseCtrl.getPauseMode() === "strict" && consecutiveFails >= 3;
+  }
 }

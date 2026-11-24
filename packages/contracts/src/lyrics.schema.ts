@@ -27,6 +27,7 @@ export const LyricsDataSchema = z.object({
   source: z.string().default("lyrica"),
   syncLevel: SyncLevelSchema,
   hasTransliteration: z.boolean().default(false),
+  isLyricVideo: z.boolean().default(false),
   lines: z.array(LyricLineSchema),
 });
 export type LyricsData = z.infer<typeof LyricsDataSchema>;

@@ -108,4 +108,27 @@ describe("Gameplay: GameplaySessionEngine", () => {
     expect(skipped).toBe(true);
     expect(engine.failedGapIds.size).toBe(3);
   });
+
+  it("locks activeLine during rewind so lyrics never flash while player seeks back", () => {
+    const engine = new GameplaySessionEngine(mockSong, "verse_loop");
+    engine.initGaps("expert");
+
+    let rewound = false;
+    engine.tick(4950, {
+      onRewindVerse: () => {
+        rewound = true;
+      },
+    });
+    expect(rewound).toBe(true);
+
+    // During the seek, time reports 5020ms (beyond endMs 5000)
+    engine.tick(5020, {});
+    // activeLine should still be locked to l1 and NOT null
+    expect(engine.activeLine?.id).toBe("l1");
+    expect(engine.activeWord?.id).toBe("w1");
+
+    // Player finishes seeking back to 1000ms
+    engine.tick(1000, {});
+    expect(engine.activeLine?.id).toBe("l1");
+  });
 });
