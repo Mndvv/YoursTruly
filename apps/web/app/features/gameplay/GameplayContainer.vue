@@ -122,9 +122,9 @@ function replayCurrentLine() {
       </button>
     </div>
 
-    <!-- Sticky Video Player (compact to preserve vertical space for gameplay controls) -->
-    <div class="sticky top-14 z-20 bg-gray-950 pb-1 flex justify-center">
-      <div class="w-full max-w-lg aspect-video max-h-[22vh] sm:max-h-[26vh] md:max-h-[28vh]">
+    <!-- Video Player (compact & proportional to fit viewport with zero overlap) -->
+    <div class="w-full flex justify-center">
+      <div class="w-full max-w-[380px] sm:max-w-[440px] aspect-video">
         <YouTubePlayer
           ref="playerRef"
           :video-id="song.youtubeId"
