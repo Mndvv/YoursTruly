@@ -202,7 +202,7 @@
   - All 54 monorepo tests passing across 11 test suites.
   - 0 Biome errors across 109 files. Strict NO GODMODE limits enforced across all files (all <= 200 lines).
 
-### Phase 11: Song Editing in Sync Studio & Shifter Method Bug Fix
+### Phase 11: Song Editing in Sync Studio & Shifter Method Bug Fix (Commit `ca02df3`)
 - [x] **LyricTimingShifter Bug Fix (`findFirstStartMs` TypeError):**
   - Added `findFirstStartMs()` and `shiftAll()` method aliases in `LyricTimingShifter.ts` (71 lines).
   - Updated `useStudioTapSync.ts` with `?? 0` null-coalescing fallback.
