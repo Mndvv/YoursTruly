@@ -241,7 +241,7 @@
 
 ---
 
-## Phase 12: UI Overhaul [COMPLETED]
+## Phase 12: UI Overhaul [COMPLETED] (Commit `291a9eb`)
 
 **Completed:** 2026-11-24
 
