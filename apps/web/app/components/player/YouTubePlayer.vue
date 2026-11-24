@@ -7,7 +7,6 @@ import {
   type YTPlayerInstance,
   type YouTubePlayerProps,
   buildPlayerVars,
-  isLocalNetworkIp,
 } from "./youtubePlayerTypes";
 
 const props = withDefaults(defineProps<YouTubePlayerProps>(), {
@@ -35,10 +34,6 @@ const isAutoplayBlocked = ref(false);
 const isPlaying = ref(false);
 let player: YTPlayerInstance | null = null;
 let animFrame: number | null = null;
-
-const isLocalIp = computed(() =>
-  typeof window !== "undefined" ? isLocalNetworkIp(window.location.hostname) : false,
-);
 
 function pollTime() {
   if (player?.getCurrentTime) {
@@ -70,7 +65,6 @@ function createPlayerInstance() {
   const YT = win.YT as { Player: new (id: string, opts: unknown) => YTPlayerInstance };
   if (!YT || !YT.Player) return;
 
-  const origin = isLocalIp.value ? undefined : window.location.origin;
   embedErrorCode.value = null;
   isAutoplayBlocked.value = false;
 
@@ -78,7 +72,7 @@ function createPlayerInstance() {
     width: "100%",
     height: "100%",
     videoId: props.videoId,
-    playerVars: buildPlayerVars(props, origin),
+    playerVars: buildPlayerVars(props),
     events: {
       onReady: () => disableCaptions(),
       onAutoplayBlocked: () => {
@@ -177,7 +171,6 @@ onBeforeUnmount(() => {
     <YouTubeErrorOverlay
       :error-code="embedErrorCode"
       :video-id="videoId"
-      :is-local-ip="isLocalIp"
       @retry="handleUserStart"
     />
   </div>

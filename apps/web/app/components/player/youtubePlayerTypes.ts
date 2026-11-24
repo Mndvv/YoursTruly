@@ -22,11 +22,7 @@ export interface YTPlayerInstance {
   setOption?: (module: string, option: string, value: unknown) => void;
 }
 
-export function isLocalNetworkIp(hostname: string): boolean {
-  return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname);
-}
-
-export function buildPlayerVars(props: YouTubePlayerProps, origin?: string) {
+export function buildPlayerVars(props: YouTubePlayerProps) {
   return {
     autoplay: props.autoplay ? 1 : 0,
     controls: props.showControls && !props.disableScrubbing ? 1 : 0,
@@ -38,7 +34,5 @@ export function buildPlayerVars(props: YouTubePlayerProps, origin?: string) {
     start: Math.floor(props.startMs / 1000),
     playsinline: 1,
     enablejsapi: 1,
-    origin,
-    widget_referrer: origin,
   };
 }

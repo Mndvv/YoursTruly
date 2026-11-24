@@ -5,13 +5,9 @@ import { computed } from "vue";
 interface Props {
   errorCode: number | null;
   videoId: string;
-  isLocalIp?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  isLocalIp: false,
-});
-
+const props = defineProps<Props>();
 defineEmits<(e: "retry") => void>();
 
 const isEmbedRestricted = computed(() => props.errorCode === 101 || props.errorCode === 150);
@@ -28,15 +24,12 @@ const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId
     </div>
 
     <h3 class="text-xs sm:text-sm font-bold text-white mb-1">
-      {{ isEmbedRestricted ? "Embedding Restricted on Mobile" : "Video Playback Error" }}
+      {{ isEmbedRestricted ? "Embedding Disabled by Owner" : "Video Playback Error" }}
     </h3>
 
     <p class="text-[11px] text-gray-300 max-w-xs mb-2.5 leading-relaxed">
-      <template v-if="isEmbedRestricted && isLocalIp">
-        YouTube blocks some copyrighted music embeds when accessed via local network IP (192.168.x.x) on mobile devices.
-      </template>
-      <template v-else-if="isEmbedRestricted">
-        The copyright owner has disabled playing this video inside embedded mobile players.
+      <template v-if="isEmbedRestricted">
+        The copyright owner has blocked embedding for this video.
       </template>
       <template v-else>
         This video could not be loaded or is restricted on this device.
@@ -65,7 +58,7 @@ const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId
     </div>
 
     <p class="text-[10px] text-amber-300/80 mt-2 max-w-xs font-mono">
-      Tip: Works on desktop localhost. On mobile, swap this ID in Sync Studio with a lyric or official audio version.
+      Tip: Swap this YouTube ID in Sync Studio with a lyric or official audio version that allows embedding.
     </p>
   </div>
 </template>
