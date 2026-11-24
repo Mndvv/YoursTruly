@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Phase 13: Non-Latin Unicode Support & Choice Distractor Randomization
-- **Active Task:** [x] Phase 13 complete — Universal non-Latin language optimization (IME composition, Unicode punctuation stripping, CJK blanks) and Fisher-Yates choice distractor shuffle
+- **Current Phase:** Phase 14: Non-Repeating Choice Tile Placement & Varied Distractor Sampling
+- **Active Task:** [x] Phase 14 complete — Non-repeating choice tile placement (consecutive repeat count = 0), dynamic whole-song distractor sampling, and non-alphanumeric token gap exclusion
 - **Last Updated:** 2026-11-24
 
 ---
@@ -289,6 +289,20 @@
 - [x] **IME Composition in WriteInput:** Added `isComposing` state with `@compositionstart` and `@compositionend` handlers, plus a guard in `handleKeyDown` ensuring Enter and Space are not intercepted while composing in IME, allowing Japanese/CJK users to convert kana to kanji and select candidates without triggering premature submission.
 - [x] **Test Coverage:** Added `packages/core/test/unicode-gameplay.test.ts` covering Japanese/CJK validation, full-width NFKC normalization, progressive hints, candidate distractor extraction, and 50-iteration Fisher-Yates shuffle distribution. All 59 unit & integration tests passing.
 - [x] **Production Verification:** Clean Biome lint across 117 files, Nuxt 4 production build completed, Docker containers rebuilt and healthy.
+
+---
+
+## Phase 14: Non-Repeating Choice Tile Placement & Dynamic Distractor Sampling [COMPLETED]
+
+**Completed:** 2026-11-24
+
+### Completed Checklist
+- [x] **Zero Consecutive Tile Repeats:** Added `avoidIndex?: number` parameter to `ChoiceDistractorGenerator.generateChoices` and state tracking in `WordTransitionHelper` (`lastCorrectTileIndex`). Correct answer position is strictly excluded from landing on the same tile as the previous word (`consecutiveRepeats = 0`), eliminating repetitive muscle memory or perceived clustering.
+- [x] **Dynamic Distractor Pool Sampling:** Replaced static `uniqueCandidates.slice(0, 3)` (which previously locked the distractors to the first 3 words of the song) with dynamic random sampling from the candidate pool across the entire song. Every word now receives 3 fresh, unique distractors.
+- [x] **Non-Alphanumeric Gap Exclusion:** Updated `GapGenerator.generateGaps` to require `[\p{L}\p{N}]`, preventing musical symbols (`♫♫♫`, `♪♪♪`) and instrumental markers from becoming unsolvable gaps.
+- [x] **AnswerValidator Fallback:** Added clean target length fallback check so non-alphanumeric tokens never cause perpetual hang if present.
+- [x] **Cognitive Complexity & No Godmode Compliance:** Extracted `collectCandidates`, `sampleDistractors`, `pickTargetSlot`, and `buildOptions` helper methods in `ChoiceDistractorGenerator.ts` to keep complexity $\le 15$ and all files strictly $\le 200$ lines.
+- [x] **Test & Build Verification:** 60 Bun unit tests passing, 0 Biome lint errors across 117 files, Nuxt 4 build clean, Docker web & api containers rebuilt and healthy.
 
 ---
 

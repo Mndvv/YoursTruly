@@ -18,6 +18,11 @@ export class AnswerValidator {
     const cleanInput = this.normalize(userInput, opts);
     const cleanTarget = this.normalize(targetWord, opts);
 
+    // Fallback if target is purely symbols/non-alphanumeric (e.g. musical tokens)
+    if (cleanTarget.length === 0) {
+      return userInput.trim().toLowerCase() === targetWord.trim().toLowerCase();
+    }
+
     if (cleanInput.length === 0) return false;
     if (cleanInput === cleanTarget) return true;
     if (opts.debounceDoubleLetters) {

@@ -21,7 +21,10 @@ export class GapGenerator {
         ? (w as WordToken)
         : WordToken.fromData(w as WordTokenData),
     );
-    const eligibleWords = tokens.filter((w) => w.isEligibleForGap());
+    // Ensure tokens have isEligibleForGap flag AND contain at least one letter or digit
+    const eligibleWords = tokens.filter(
+      (w) => w.isEligibleForGap() && /[\p{L}\p{N}]/u.test(w.getText()),
+    );
     if (eligibleWords.length === 0) return new Set();
 
     const targetRatio = DIFFICULTY_RATIOS[difficulty];

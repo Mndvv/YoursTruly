@@ -6,6 +6,7 @@ import type { ChoiceDistractorGenerator } from "./ChoiceDistractorGenerator";
 export class WordTransitionHelper {
   public activeWord: WordTokenData | null = null;
   public activeChoices: string[] = [];
+  private lastCorrectTileIndex = -1;
 
   constructor(
     private readonly gapResolver: ActiveGapResolver,
@@ -17,7 +18,14 @@ export class WordTransitionHelper {
   public transitionToWord(w: WordTokenData, onResetState: () => void): void {
     this.activeWord = w;
     onResetState();
-    this.activeChoices = this.distractorGen.generateChoices(w, this.allWords);
+    this.activeChoices = this.distractorGen.generateChoices(
+      w,
+      this.allWords,
+      undefined,
+      Math.random,
+      this.lastCorrectTileIndex,
+    );
+    this.lastCorrectTileIndex = this.activeChoices.indexOf(w.text);
   }
 
   public advanceToNextGap(
