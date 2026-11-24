@@ -319,11 +319,12 @@
 **Completed:** 2026-11-24
 
 ### Completed Checklist
-- [x] **Mobile Playsinline & Origin Configuration:** Added `playsinline: 1`, `enablejsapi: 1`, `origin: window.location.origin`, and `widget_referrer: window.location.origin` inside `YouTubePlayer.vue` `playerVars`. Prevents mobile browsers (iOS Safari, mobile Chrome) from refusing inline iframe playback and prompting the user to leave the app for native YouTube.
+- [x] **Mobile Playsinline & Origin Sanitization:** Added `playsinline: 1`, `enablejsapi: 1`, and origin sanitization via `youtubePlayerTypes.ts`. When accessed via raw local network IP (e.g. `http://192.168.x.x:3000` during mobile Wi-Fi testing), `origin` is omitted from `playerVars` so YouTube's Content ID security layer does not reject the raw private IP origin with Error 150.
 - [x] **Strict-Origin Referrer Header:** Configured `<meta name="referrer" content="strict-origin-when-cross-origin">` in `nuxt.config.ts`, ensuring YouTube's Content ID and copyright validation can verify the origin domain rather than failing with an empty referrer.
-- [x] **Error 101 / 150 Handling & Fallback UI:** Built `YouTubeErrorOverlay.vue` to intercept YouTube IFrame API `onError` (Error 101/150 embedding blocked by video owner, Error 100 missing/private). Displays a clean in-player banner explaining the copyright block with a direct "Watch on YouTube" button (`PhYoutubeLogo` + `PhArrowSquareOut`) and guidance to swap to an embeddable lyric/audio version in Sync Studio.
-- [x] **No Godmode Compliance:** Kept `YouTubePlayer.vue` at 194 lines and `YouTubeErrorOverlay.vue` at 55 lines, strictly within the 200-line limit.
-- [x] **Production Verification:** Nuxt 4 build clean, all 60 tests passing, 0 Biome errors across 118 files, Docker web container rebuilt and healthy.
+- [x] **Mobile Tap-to-Play Activation:** Added `YouTubeTapToPlayOverlay.vue` listening for `onAutoplayBlocked`. Direct user tap immediately unmutes and starts playback, satisfying mobile browser user-activation policies without forcing users off-site.
+- [x] **Error 101 / 150 Handling & Fallback UI:** Built `YouTubeErrorOverlay.vue` to intercept YouTube IFrame API `onError` (Error 101/150 embedding blocked by video owner, Error 100 missing/private). Displays a clean in-player banner explaining copyright/local-IP restrictions with a retry button, direct "Watch on YouTube" button (`PhYoutubeLogo` + `PhArrowSquareOut`), and guidance to swap to an embeddable lyric/audio version in Sync Studio.
+- [x] **No Godmode Compliance:** Kept `YouTubePlayer.vue` at 191 lines, `YouTubeTapToPlayOverlay.vue` at 22 lines, `youtubePlayerTypes.ts` at 44 lines, and `YouTubeErrorOverlay.vue` at 71 lines, strictly within the 200-line hard limit.
+- [x] **Production Verification:** Nuxt 4 build clean, all 60 tests passing, 0 Biome errors across 120 files, Docker web container rebuilt and healthy.
 
 ---
 

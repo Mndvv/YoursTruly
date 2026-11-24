@@ -1,32 +1,16 @@
 <script setup lang="ts">
 import { PhLockSimple } from "@phosphor-icons/vue";
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import YouTubeErrorOverlay from "./YouTubeErrorOverlay.vue";
+import YouTubeTapToPlayOverlay from "./YouTubeTapToPlayOverlay.vue";
+import {
+  type YTPlayerInstance,
+  type YouTubePlayerProps,
+  buildPlayerVars,
+  isLocalNetworkIp,
+} from "./youtubePlayerTypes";
 
-interface Props {
-  videoId: string;
-  startMs?: number;
-  endMs?: number | null;
-  playbackRate?: number;
-  isPaused?: boolean;
-  autoplay?: boolean;
-  showControls?: boolean;
-  disableScrubbing?: boolean;
-  isBlurred?: boolean;
-}
-
-interface YTPlayer {
-  getCurrentTime?: () => number;
-  pauseVideo?: () => void;
-  playVideo?: () => void;
-  seekTo?: (seconds: number, allowSeekAhead?: boolean) => void;
-  destroy?: () => void;
-  setPlaybackRate?: (rate: number) => void;
-  unloadModule?: (module: string) => void;
-  setOption?: (module: string, option: string, value: unknown) => void;
-}
-
-const props = withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<YouTubePlayerProps>(), {
   startMs: 0,
   endMs: null,
   playbackRate: 1.0,
@@ -47,16 +31,21 @@ const emit = defineEmits<{
 
 const containerId = `yt_player_${Math.random().toString(36).substring(2, 9)}`;
 const embedErrorCode = ref<number | null>(null);
-let player: YTPlayer | null = null;
+const isAutoplayBlocked = ref(false);
+const isPlaying = ref(false);
+let player: YTPlayerInstance | null = null;
 let animFrame: number | null = null;
 
+const isLocalIp = computed(() =>
+  typeof window !== "undefined" ? isLocalNetworkIp(window.location.hostname) : false,
+);
+
 function pollTime() {
-  if (player && typeof player.getCurrentTime === "function") {
+  if (player?.getCurrentTime) {
     const currentMs = Math.round(player.getCurrentTime() * 1000);
     emit("timeupdate", currentMs);
-
     if (props.endMs && currentMs >= props.endMs) {
-      if (typeof player.pauseVideo === "function") player.pauseVideo();
+      player.pauseVideo?.();
       emit("ended");
     }
   }
@@ -66,7 +55,6 @@ function pollTime() {
 function initPlayer() {
   const win = window as unknown as Record<string, unknown>;
   const yt = win.YT as Record<string, unknown> | undefined;
-
   if (!yt || !yt.Player) {
     const tag = document.createElement("script");
     tag.src = "https://www.youtube.com/iframe_api";
@@ -79,38 +67,36 @@ function initPlayer() {
 
 function createPlayerInstance() {
   const win = window as unknown as Record<string, unknown>;
-  const YT = win.YT as { Player: new (id: string, opts: unknown) => YTPlayer };
+  const YT = win.YT as { Player: new (id: string, opts: unknown) => YTPlayerInstance };
   if (!YT || !YT.Player) return;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : undefined;
+  const origin = isLocalIp.value ? undefined : window.location.origin;
   embedErrorCode.value = null;
+  isAutoplayBlocked.value = false;
 
   player = new YT.Player(containerId, {
     width: "100%",
     height: "100%",
     videoId: props.videoId,
-    playerVars: {
-      autoplay: props.autoplay ? 1 : 0,
-      controls: props.showControls && !props.disableScrubbing ? 1 : 0,
-      disablekb: props.disableScrubbing ? 1 : 0,
-      fs: 0,
-      rel: 0,
-      cc_load_policy: 0,
-      iv_load_policy: 3,
-      start: Math.floor(props.startMs / 1000),
-      playsinline: 1,
-      enablejsapi: 1,
-      origin,
-      widget_referrer: origin,
-    },
+    playerVars: buildPlayerVars(props, origin),
     events: {
       onReady: () => disableCaptions(),
+      onAutoplayBlocked: () => {
+        isAutoplayBlocked.value = true;
+      },
       onStateChange: (event: { data: number }) => {
         if (event.data === 1) {
+          isPlaying.value = true;
+          isAutoplayBlocked.value = false;
           disableCaptions();
           emit("play");
-        } else if (event.data === 2) emit("pause");
-        else if (event.data === 0) emit("ended");
+        } else if (event.data === 2) {
+          isPlaying.value = false;
+          emit("pause");
+        } else if (event.data === 0) {
+          isPlaying.value = false;
+          emit("ended");
+        }
       },
       onError: (event: { data: number }) => {
         embedErrorCode.value = event.data;
@@ -121,35 +107,29 @@ function createPlayerInstance() {
   animFrame = requestAnimationFrame(pollTime);
 }
 
+function handleUserStart() {
+  isAutoplayBlocked.value = false;
+  embedErrorCode.value = null;
+  player?.unMute?.();
+  player?.playVideo?.();
+}
+
 function disableCaptions() {
-  if (!player) return;
-  try {
-    if (typeof player.unloadModule === "function") {
-      player.unloadModule("captions");
-      player.unloadModule("cc");
-    }
-    if (typeof player.setOption === "function") {
-      player.setOption("captions", "track", {});
-      player.setOption("cc", "track", {});
-    }
-  } catch (_) {}
+  player?.unloadModule?.("captions");
+  player?.unloadModule?.("cc");
+  player?.setOption?.("captions", "track", {});
+  player?.setOption?.("cc", "track", {});
 }
 
-function pause() {
-  if (player && typeof player.pauseVideo === "function") player.pauseVideo();
-}
-function play() {
-  if (player && typeof player.playVideo === "function") player.playVideo();
-}
-function seekTo(seconds: number) {
-  if (player && typeof player.seekTo === "function") player.seekTo(seconds, true);
-}
-
-defineExpose({ pause, play, seekTo });
+defineExpose({
+  pause: () => player?.pauseVideo?.(),
+  play: () => player?.playVideo?.(),
+  seekTo: (s: number) => player?.seekTo?.(s, true),
+});
 
 watch(
   () => props.isPaused,
-  (p) => (p ? pause() : play()),
+  (p) => (p ? player?.pauseVideo?.() : player?.playVideo?.()),
 );
 watch(
   () => props.playbackRate,
@@ -163,7 +143,7 @@ watch(
 onMounted(() => initPlayer());
 onBeforeUnmount(() => {
   if (animFrame) cancelAnimationFrame(animFrame);
-  if (player && typeof player.destroy === "function") player.destroy();
+  player?.destroy?.();
 });
 </script>
 
@@ -175,7 +155,7 @@ onBeforeUnmount(() => {
       :class="{ 'blur-2xl scale-110 filter brightness-75': isBlurred }"
     />
     <div
-      v-if="disableScrubbing && !embedErrorCode"
+      v-if="disableScrubbing && isPlaying && !embedErrorCode && !isAutoplayBlocked"
       class="absolute inset-0 z-10 select-none bg-transparent cursor-default"
       @click.stop.prevent
       @mousedown.stop.prevent
@@ -190,8 +170,16 @@ onBeforeUnmount(() => {
       <span>Blurred</span>
     </div>
 
-    <!-- YouTube Error & Embedding Restricted Fallback Overlay -->
-    <YouTubeErrorOverlay :error-code="embedErrorCode" :video-id="videoId" />
+    <YouTubeTapToPlayOverlay
+      :is-visible="isAutoplayBlocked && !embedErrorCode"
+      @play="handleUserStart"
+    />
+    <YouTubeErrorOverlay
+      :error-code="embedErrorCode"
+      :video-id="videoId"
+      :is-local-ip="isLocalIp"
+      @retry="handleUserStart"
+    />
   </div>
 </template>
 
