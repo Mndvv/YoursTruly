@@ -1,8 +1,8 @@
 # PROGRESS.md — Single Source of Truth
 
 ## Current State
-- **Current Phase:** Phase 10: Anti-Cheat CC Disabling, Lyric Video Blur, and Verse Loop Stabilization
-- **Active Task:** [x] Phase 10 complete — YouTube CC disabled, lyric video auto-detection & blur implemented, and verse loop rewind line locking stabilized against flashing and input disruption.
+- **Current Phase:** Phase 11: Song Editing in Sync Studio & Shifter Method Bug Fix
+- **Active Task:** [x] Phase 11 complete — Re-enter Sync Studio for existing songs with edit token, all toggles (Lyric Video blur, word gap clicks, offset controls), and LyricTimingShifter method fix.
 - **Last Updated:** 2026-11-24
 
 ---
@@ -202,6 +202,24 @@
   - All 54 monorepo tests passing across 11 test suites.
   - 0 Biome errors across 109 files. Strict NO GODMODE limits enforced across all files (all <= 200 lines).
 
+### Phase 11: Song Editing in Sync Studio & Shifter Method Bug Fix
+- [x] **LyricTimingShifter Bug Fix (`findFirstStartMs` TypeError):**
+  - Added `findFirstStartMs()` and `shiftAll()` method aliases in `LyricTimingShifter.ts` (71 lines).
+  - Updated `useStudioTapSync.ts` with `?? 0` null-coalescing fallback.
+  - Added unit test cases for both method aliases in `packages/core/test/sync.test.ts`.
+- [x] **Re-enter Sync Studio for Existing Music (Editing Capability):**
+  - Created `useStudioSongPersistence.ts` (146 lines) managing song fetching (`GET /api/songs/:id`), updates (`PUT /api/songs/:id`), and localStorage edit token caching.
+  - Updated `useSyncStudio.ts` (163 lines) with `loadSongForEditing()` jumping straight to the sync authoring step.
+  - Added `route.query.id` auto-loader in `SyncStudioContainer.vue` (176 lines) with "Editing Song" indicator, "Save Changes 💾" action, and secret edit token entry.
+  - Extracted `StudioPublishedCard.vue` (27 lines) and `StudioLivePreview.vue` (50 lines) to maintain strict NO GODMODE limit (< 200 lines).
+- [x] **Full Toggle and Timing Editing Support:**
+  - Preserved and made fully editable: `LyricVideoToggle` (`isLyricVideo` blur), word-level gap click toggles, track alignment, and global offsets.
+  - Added "Edit ✏️" button to `SongCard.vue` (65 lines) in Song Catalog and `PreGameLobby.vue` (198 lines) in Pre-Game.
+- [x] **Verification & Tests:**
+  - All 54 unit and integration tests passing across 11 test suites.
+  - 0 Biome errors across 112 files.
+  - Production build (`bun run build`) compiling client and Nitro server cleanly.
+
 ---
 
 ## Architectural Decisions & Deviations
@@ -213,18 +231,22 @@
 5. **Keystroke-Level Auto-Validation:** Evaluates input on `@input` with `isAutoCheck = true` so valid words submit with zero latency without penalizing typing mid-word.
 6. **Apostrophe Invariance:** Normalizes `'`, `’`, `‘`, and backticks identically across user input and lyrics token text.
 7. **Rewind ActiveLine Pinning:** Pinning `activeLine` in `VerseLoopManager` during asynchronous seek avoids visual flicker, prevents cheating, and preserves user input.
+8. **Decoupled Studio Persistence:** Extracted `useStudioSongPersistence.ts` and `StudioLivePreview.vue` so container and studio composables remain thin, focused, and maintainable.
 
 ---
 
 ## Known Issues / Blockers
 
-- None. All 54 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 109 files.
+- None. All 54 unit & integration tests passing. Nuxt 4 & Elysia production builds clean. Biome 0 errors across 112 files.
 
 ---
 
 ## Exact Next Step
 
-1. Commit atomic unit: `feat(gameplay): disable YouTube CC, blur lyric videos, and stabilize verse loop rewinds`.
-2. Deploy/Rebuild Docker containers with `docker compose up -d --build`.
-3. Verify YouTube player CC disabled, lyric video blur toggle in Studio & Gameplay, and smooth verse loop rewinds in browser.
+1. Commit atomic unit: `feat(studio): add song editing in sync studio, toggle persistence, and fix shifter method bug`.
+2. Rebuild and restart Docker containers with `docker compose up -d --build`.
+3. Test in browser:
+   - Click "Edit ✏️" on any song card in the catalog or pre-game lobby -> opens Sync Studio directly for that song.
+   - Verify all word timings, Lyric Video blur toggle, global offset, and gap eligibility are loaded and editable.
+   - Modify toggles/timings and click "Save Changes 💾" -> saves update to backend with edit token!
 

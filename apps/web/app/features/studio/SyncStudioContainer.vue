@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { LyricLineData, LyricaCandidateDto } from "@yourstruly/contracts";
-import { SyncClockEngine, type WordToken } from "@yourstruly/core";
-import { computed, ref } from "vue";
-import LyricDisplay from "../../components/player/LyricDisplay.vue";
+import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import YouTubePlayer from "../../components/player/YouTubePlayer.vue";
 import LyricCandidatePicker from "../../components/studio/LyricCandidatePicker.vue";
 import LyricVideoToggle from "../../components/studio/LyricVideoToggle.vue";
 import OffsetControl from "../../components/studio/OffsetControl.vue";
+import StudioLivePreview from "../../components/studio/StudioLivePreview.vue";
+import StudioPublishedCard from "../../components/studio/StudioPublishedCard.vue";
 import TapSyncPad from "../../components/studio/TapSyncPad.vue";
 import TrackAlignmentControl from "../../components/studio/TrackAlignmentControl.vue";
 import WordTimingRow from "../../components/studio/WordTimingRow.vue";
@@ -14,34 +14,23 @@ import YouTubeVideoSelector from "../../components/studio/YouTubeVideoSelector.v
 import AppButton from "../../components/ui/AppButton.vue";
 import { useSyncStudio } from "../../composables/useSyncStudio";
 
+const route = useRoute();
 const config = useRuntimeConfig();
 const studio = useSyncStudio(config.public.apiBase);
-const clockEngine = new SyncClockEngine();
 
 const currentTimeMs = ref(0);
 const statusError = ref<string | null>(null);
 
-const previewState = computed(() => {
-  if (!studio.lyricsData.value) {
-    return { activeLine: null, activeWord: null };
+onMounted(async () => {
+  const songId = route.query.id;
+  if (songId && typeof songId === "string") {
+    statusError.value = null;
+    try {
+      await studio.loadSongForEditing(songId);
+    } catch (err: unknown) {
+      statusError.value = err instanceof Error ? err.message : "Failed to load song for editing";
+    }
   }
-  return clockEngine.resolveState(
-    studio.lyricsData.value.lines,
-    currentTimeMs.value,
-    studio.globalOffsetMs.value,
-  );
-});
-
-const previewLine = computed<LyricLineData | null>(() => {
-  return (previewState.value.activeLine as LyricLineData | null) ?? null;
-});
-
-const previewWordId = computed<string | null>(() => {
-  const w = previewState.value.activeWord;
-  if (!w) return null;
-  return "getId" in w && typeof (w as WordToken).getId === "function"
-    ? (w as WordToken).getId()
-    : (w as { id: string }).id;
 });
 
 async function onFindVideo(urlOrId?: string) {
@@ -78,7 +67,10 @@ function onApplyCustom(lyrics: string) {
     <div class="flex items-center justify-between border-b border-gray-800 pb-4">
       <div>
         <h1 class="text-2xl font-extrabold text-white">Authoring & Sync Studio</h1>
-        <p class="text-xs text-gray-400">Step: <span class="uppercase font-mono text-indigo-400">{{ studio.currentStep.value }}</span></p>
+        <p class="text-xs text-gray-400">
+          <span v-if="studio.isEditMode.value" class="text-amber-400 font-semibold mr-2">✏️ Editing Song</span>
+          Step: <span class="uppercase font-mono text-indigo-400">{{ studio.currentStep.value }}</span>
+        </p>
       </div>
       <AppButton
         v-if="studio.currentStep.value === 'sync'"
@@ -87,7 +79,7 @@ function onApplyCustom(lyrics: string) {
         :disabled="studio.isSubmitting.value"
         @click="studio.submitSong()"
       >
-        {{ studio.isSubmitting.value ? 'Publishing...' : 'Publish Song 🚀' }}
+        {{ studio.isSubmitting.value ? (studio.isEditMode.value ? 'Saving...' : 'Publishing...') : (studio.isEditMode.value ? 'Save Changes 💾' : 'Publish Song 🚀') }}
       </AppButton>
     </div>
 
@@ -119,17 +111,11 @@ function onApplyCustom(lyrics: string) {
       <YouTubePlayer :video-id="studio.youtubeId.value" @timeupdate="(t) => currentTimeMs = t" />
 
       <!-- Live Sync Preview -->
-      <div class="flex flex-col gap-1.5">
-        <div class="flex items-center justify-between px-1">
-          <span class="text-xs font-semibold uppercase tracking-wider text-gray-400">Live Lyrics Sync Preview</span>
-          <span class="text-xs font-mono text-indigo-400">{{ (currentTimeMs / 1000).toFixed(1) }}s</span>
-        </div>
-        <LyricDisplay
-          :active-line="previewLine"
-          :active-word-id="previewWordId"
-          :show-transliteration="true"
-        />
-      </div>
+      <StudioLivePreview
+        :lyrics-data="studio.lyricsData.value"
+        :current-time-ms="currentTimeMs"
+        :global-offset-ms="studio.globalOffsetMs.value"
+      />
 
       <!-- Whole Track Alignment / Intro Offset -->
       <TrackAlignmentControl
@@ -157,6 +143,16 @@ function onApplyCustom(lyrics: string) {
         @update-offset="(v) => studio.globalOffsetMs.value = v"
       />
 
+      <div v-if="studio.isEditMode.value" class="flex items-center gap-3 p-3 bg-gray-900 border border-gray-800 rounded-xl text-xs">
+        <span class="text-gray-400 font-medium whitespace-nowrap">🔑 Edit Token:</span>
+        <input
+          v-model="studio.editToken.value"
+          type="password"
+          placeholder="Paste your secret edit token"
+          class="flex-1 bg-gray-950 border border-gray-700 px-2.5 py-1.5 rounded-lg text-white font-mono text-xs focus:border-indigo-500 outline-none"
+        />
+      </div>
+
       <div class="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
         <WordTimingRow
           v-for="(line, idx) in studio.lyricsData.value?.lines"
@@ -171,13 +167,10 @@ function onApplyCustom(lyrics: string) {
     </div>
 
     <!-- Step 4: Done / Edit Link -->
-    <div v-else-if="studio.currentStep.value === 'done'" class="bg-gray-900 border border-indigo-700 rounded-2xl p-6 text-center flex flex-col items-center gap-4">
-      <span class="text-4xl">🎉</span>
-      <h2 class="text-2xl font-bold text-white">Song Published Successfully!</h2>
-      <p class="text-gray-300 text-sm max-w-md">Your secret edit token has been saved to your browser. You can edit this track at any time.</p>
-      <NuxtLink :to="`/game/${studio.createdSong.value?.song.id}`">
-        <AppButton size="lg" variant="primary">Play Song Now ▶</AppButton>
-      </NuxtLink>
-    </div>
+    <StudioPublishedCard
+      v-else-if="studio.currentStep.value === 'done'"
+      :song-id="studio.createdSong.value?.song.id"
+      :is-edit-mode="studio.isEditMode.value"
+    />
   </div>
 </template>

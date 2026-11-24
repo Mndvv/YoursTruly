@@ -21,19 +21,14 @@ const props = withDefaults(defineProps<Props>(), {
   initialDebounceDoubleLetters: true,
 });
 
-const emit =
-  defineEmits<
-    (
-      e: "start",
-      config: {
-        mode: "write" | "choice";
-        difficulty: DifficultyLevel;
-        pauseMode: PauseMode;
-        ignoreSymbols: boolean;
-        debounceDoubleLetters: boolean;
-      },
-    ) => void
-  >();
+interface StartPayload {
+  mode: "write" | "choice";
+  difficulty: DifficultyLevel;
+  pauseMode: PauseMode;
+  ignoreSymbols: boolean;
+  debounceDoubleLetters: boolean;
+}
+const emit = defineEmits<(e: "start", config: StartPayload) => void>();
 
 const selectedMode = ref<"write" | "choice">(props.initialMode);
 const selectedDifficulty = ref<DifficultyLevel>(props.initialDifficulty);
@@ -190,9 +185,14 @@ function handleStart() {
       <AppButton size="lg" variant="primary" class="w-full text-base py-3 shadow-xl" @click="handleStart">
         Start Playing ▶
       </AppButton>
-      <NuxtLink to="/" class="text-center text-xs text-gray-500 hover:text-gray-300">
-        ← Back to Song Catalog
-      </NuxtLink>
+      <div class="flex items-center justify-between px-1">
+        <NuxtLink to="/" class="text-xs text-gray-500 hover:text-gray-300">
+          ← Song Catalog
+        </NuxtLink>
+        <NuxtLink :to="`/studio?id=${song.id}`" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
+          ✏️ Edit in Sync Studio
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>

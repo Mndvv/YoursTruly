@@ -36,7 +36,16 @@ const emit = defineEmits<(e: "delete", id: string, title: string) => void>();
 
       <div class="flex items-center justify-between pt-3 border-t border-gray-800/80">
         <span class="text-xs text-gray-500 font-mono">▶ {{ song.playCount }} plays</span>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5">
+          <NuxtLink :to="`/studio?id=${song.id}`">
+            <button
+              type="button"
+              title="Edit in Sync Studio"
+              class="text-xs text-indigo-400 hover:text-indigo-300 px-2 py-1.5 rounded-lg hover:bg-indigo-950/40 transition min-h-[36px]"
+            >
+              Edit ✏️
+            </button>
+          </NuxtLink>
           <button
             type="button"
             :disabled="isDeleting"

@@ -16,7 +16,7 @@ export function useStudioTapSync(lyricsData: Ref<LyricsData | null>) {
 
   const firstLyricStartMs = computed(() => {
     if (!lyricsData.value) return 0;
-    return shifter.findFirstStartMs(lyricsData.value);
+    return shifter.findFirstStartMs(lyricsData.value) ?? 0;
   });
 
   function recordTapDown(timeMs: number) {

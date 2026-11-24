@@ -104,10 +104,11 @@ describe("Sync: LyricTimingShifter", () => {
 
   it("finds earliest startMs across lines and words", () => {
     expect(shifter.findEarliestStartMs(sampleLyrics)).toBe(5000);
+    expect(shifter.findFirstStartMs(sampleLyrics)).toBe(5000);
   });
 
   it("shifts all timestamps by delta while preserving relative spacing", () => {
-    const shifted = shifter.shiftAllByDelta(sampleLyrics, 10000);
+    const shifted = shifter.shiftAll(sampleLyrics, 10000);
     expect(shifted.lines[0].startMs).toBe(15000);
     expect(shifted.lines[0].endMs).toBe(17000);
     expect(shifted.lines[0].words[0].startMs).toBe(15000);

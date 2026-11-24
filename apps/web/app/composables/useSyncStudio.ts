@@ -1,11 +1,7 @@
-import type {
-  CreateSongDto,
-  LyricaCandidateDto,
-  LyricsData,
-  SongCreatedResponseDto,
-} from "@yourstruly/contracts";
+import type { LyricaCandidateDto, LyricsData, SongCreatedResponseDto } from "@yourstruly/contracts";
 import { LyricsNormalizer, YouTubeTitleCleaner } from "@yourstruly/core";
 import { ref } from "vue";
+import { useStudioSongPersistence } from "./useStudioSongPersistence";
 import { useStudioTapSync } from "./useStudioTapSync";
 
 export function useSyncStudio(apiBase = "") {
@@ -28,10 +24,9 @@ export function useSyncStudio(apiBase = "") {
   const lyricsData = ref<LyricsData | null>(null);
   const candidates = ref<LyricaCandidateDto[]>([]);
   const isSearchingLyrics = ref(false);
-  const createdSong = ref<SongCreatedResponseDto | null>(null);
-  const isSubmitting = ref(false);
 
   const tapSync = useStudioTapSync(lyricsData);
+  const persistence = useStudioSongPersistence(apiBase);
 
   async function fetchYouTubeMetadata() {
     if (!youtubeUrl.value) return;
@@ -92,11 +87,27 @@ export function useSyncStudio(apiBase = "") {
     currentStep.value = "sync";
   }
 
+  async function loadSongForEditing(songId: string) {
+    const song = await persistence.loadSong(songId);
+    youtubeId.value = song.youtubeId;
+    youtubeUrl.value = `https://www.youtube.com/watch?v=${song.youtubeId}`;
+    songTitle.value = song.title;
+    artistName.value = song.artist;
+    languageCode.value = song.languageCode;
+    videoStartMs.value = song.videoStartMs;
+    videoEndMs.value = song.videoEndMs;
+    globalOffsetMs.value = song.globalOffsetMs;
+    lyricsData.value = song.lyricsData;
+    isLyricVideo.value = Boolean(song.lyricsData?.isLyricVideo);
+    isAutoDetectedLyricVideo.value = Boolean(song.lyricsData?.isLyricVideo);
+    currentStep.value = "sync";
+  }
+
   async function submitSong(): Promise<SongCreatedResponseDto> {
     if (!lyricsData.value || !youtubeId.value) throw new Error("Missing song or lyric data");
-    isSubmitting.value = true;
-
-    const payload: CreateSongDto = {
+    const result = await persistence.saveSong({
+      isEditMode: persistence.isEditMode.value,
+      songId: persistence.editingSongId.value,
       youtubeId: youtubeId.value,
       title: songTitle.value || videoTitle.value,
       artist: artistName.value || "Unknown Artist",
@@ -104,29 +115,11 @@ export function useSyncStudio(apiBase = "") {
       videoStartMs: videoStartMs.value,
       videoEndMs: videoEndMs.value,
       globalOffsetMs: globalOffsetMs.value,
-      lyricsData: { ...lyricsData.value, isLyricVideo: isLyricVideo.value },
-    };
-
-    try {
-      const res = await fetch(`${apiBase}/api/songs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error(`Server returned HTTP ${res.status}`);
-      const result: SongCreatedResponseDto = await res.json();
-      createdSong.value = result;
-
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem(`yourstruly:editToken:${result.song.id}`, result.editToken);
-      }
-
-      currentStep.value = "done";
-      return result;
-    } finally {
-      isSubmitting.value = false;
-    }
+      lyricsData: lyricsData.value,
+      isLyricVideo: isLyricVideo.value,
+    });
+    currentStep.value = "done";
+    return result;
   }
 
   return {
@@ -145,8 +138,13 @@ export function useSyncStudio(apiBase = "") {
     lyricsData,
     candidates,
     isSearchingLyrics,
-    createdSong,
-    isSubmitting,
+    isEditMode: persistence.isEditMode,
+    editingSongId: persistence.editingSongId,
+    editToken: persistence.editToken,
+    isLoadingSong: persistence.isLoadingSong,
+    isSubmitting: persistence.isSubmitting,
+    createdSong: persistence.createdSong,
+    loadSongForEditing,
     fetchYouTubeMetadata,
     searchCandidates,
     selectCandidate,

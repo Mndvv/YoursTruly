@@ -60,4 +60,12 @@ export class LyricTimingShifter {
     const allStarts = [...lineStarts, ...wordStarts];
     return allStarts.length > 0 ? Math.min(...allStarts) : null;
   }
+
+  public findFirstStartMs(lyrics: LyricsData): number | null {
+    return this.findEarliestStartMs(lyrics);
+  }
+
+  public shiftAll(lyrics: LyricsData, deltaMs: number): LyricsData {
+    return this.shiftAllByDelta(lyrics, deltaMs);
+  }
 }
